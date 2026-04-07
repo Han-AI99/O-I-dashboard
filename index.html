@@ -1777,17 +1777,20 @@
   .topbar-icon-btn .btn-icon { font-size: 14px; line-height: 1; }
 
   /* ── EDIT MODE: inline editable cells ── */
-  body.edit-mode [data-editable] {
+  body.edit-mode [data-editable],
+  body.edit-mode [data-auto-editable] {
     outline: 1.5px dashed rgba(245,158,11,.55);
     border-radius: 4px;
     cursor: text;
     transition: outline-color .15s, background .15s;
   }
-  body.edit-mode [data-editable]:hover {
+  body.edit-mode [data-editable]:hover,
+  body.edit-mode [data-auto-editable]:hover {
     outline-color: #f59e0b;
     background: rgba(245,158,11,.07);
   }
-  body.edit-mode [data-editable]:focus {
+  body.edit-mode [data-editable]:focus,
+  body.edit-mode [data-auto-editable]:focus {
     outline: 2px solid #f59e0b;
     background: rgba(245,158,11,.1);
   }
@@ -3084,12 +3087,12 @@
 
     <!-- 조직별 트리 패널 (조직 클릭 시 노출) -->
     <div id="oi2OrgTreePanel" style="display:none">
-      <div class="oi2-tree-panel" style="position:static;max-width:480px;max-height:none">
+      <div class="card" style="padding:0;overflow:hidden">
         <div class="oi2-tree-header">
           <span id="oi2OrgTreeTitle">조직 / 과제</span>
           <span id="oi2TreeCount" class="card-tag" style="font-size:10px"></span>
         </div>
-        <div class="oi2-tree-body" id="oi2TreeBody" style="max-height:none"></div>
+        <div id="oi2TreeBody" style="padding:20px"></div>
       </div>
     </div>
   </div>
@@ -3960,30 +3963,69 @@ function buildOi2Page(orgFilter) {
     document.getElementById('oi2OrgTreeTitle').textContent = org ? org.name + ' · 과제 목록' : '과제 목록';
     document.getElementById('oi2TreeCount').textContent = `${totalVisible}건`;
 
-    document.getElementById('oi2TreeBody').innerHTML = visibleOrgs.map((org, oi) => `
-      <div class="oi2-tree-org">
-        <div class="oi2-tree-org-header" style="cursor:default">
-          <div class="oi2-tree-org-bar" style="background:${org.color}"></div>
-          <span>${org.name}</span>
-          <span class="card-tag" style="font-size:9px;padding:1px 6px">${org.items.length}</span>
+    // 조직별 과제 카드 그리드 — 과제 수에 따라 열 수 자동 결정
+    const allOrgItems = visibleOrgs.flatMap(o => o.items);
+    const repItems2  = allOrgItems.filter(i => i.type === '대표과제');
+    const execItems2 = allOrgItems.filter(i => i.type === '임원개인');
+
+    // 열 수: 과제 수 기준 (최대 4열)
+    const colCount = allOrgItems.length <= 2 ? allOrgItems.length :
+                     allOrgItems.length <= 4 ? 2 :
+                     allOrgItems.length <= 6 ? 3 : 4;
+
+    const cardHtml = (item, org) => `
+      <div onclick="selectOi2Item('${item.id}','${org.id}')"
+        style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px;cursor:pointer;transition:all .18s;border-top:3px solid ${org.color};display:flex;flex-direction:column;gap:10px"
+        onmouseover="this.style.borderColor='rgba(59,130,246,.45)';this.style.transform='translateY(-2px)'"
+        onmouseout="this.style.borderColor='var(--border)';this.style.borderTopColor='${org.color}';this.style.transform=''">
+        <!-- 뱃지 행 -->
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          ${typeBadge(item.type)}
+          <span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;background:${statusBg[item.status]};color:${statusColor[item.status]}">${item.status}</span>
+          <span style="margin-left:auto;font-size:10px;color:var(--text3)">›</span>
         </div>
-        <div class="oi2-tree-items open" id="oi2tree-${oi}">
-          ${[...org.items].sort((a,b)=> a.type==='대표과제'&&b.type!=='대표과제'?-1:a.type!=='대표과제'&&b.type==='대표과제'?1:0).map(item => `
-            <div class="oi2-tree-item" id="treeitem-${item.id}" onclick="selectOi2Item('${item.id}','${org.id}')"
-              style="align-items:flex-start;padding:10px 16px 10px 28px;gap:0;flex-direction:column">
-              <!-- 뱃지 행 -->
-              <div style="display:flex;align-items:center;gap:5px;margin-bottom:5px">
-                ${typeBadge(item.type)}
-                <span class="oi2-item-status-dot" style="color:${statusColor[item.status]};background:${statusBg[item.status]}">${item.status}</span>
-              </div>
-              <!-- 과제명 -->
-              <div style="font-size:13px;font-weight:700;color:var(--text);line-height:1.4;word-break:keep-all">${item.name}</div>
-              <!-- cascading 조직 -->
-              ${item.type==='대표과제' && item.cascadingOrg ? `<div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px">${cascadingTag(item)}</div>` : ''}
-            </div>
-            ${cascadingSubNodes(item, org.color)}`).join('')}
+        <!-- 과제명 -->
+        <div style="font-size:13px;font-weight:700;color:var(--text);line-height:1.5;word-break:keep-all;flex:1">${item.name}</div>
+        <!-- 조직명 + cascading -->
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          <div style="width:6px;height:6px;border-radius:50%;background:${org.color};flex-shrink:0"></div>
+          <span style="font-size:10.5px;color:var(--text3)">${org.name}</span>
+          ${item.type === '대표과제' && item.cascadingOrg ? `<span style="font-size:9px;color:#a855f7;background:rgba(168,85,247,.1);padding:1px 5px;border-radius:3px">↘ Cascading</span>` : ''}
         </div>
-      </div>`).join('');
+      </div>`;
+
+    // 대표과제 / 임원과제 섹션 구분 렌더
+    let html = '';
+
+    if (repItems2.length > 0) {
+      html += `
+        <div style="margin-bottom:20px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+            <div style="width:3px;height:16px;border-radius:2px;background:#a855f7;flex-shrink:0"></div>
+            <span style="font-size:12px;font-weight:700;color:#a855f7;letter-spacing:.03em">★ 대표과제</span>
+            <span style="font-size:10px;font-weight:700;color:#a855f7;background:rgba(168,85,247,.12);border:1px solid rgba(168,85,247,.25);padding:2px 8px;border-radius:5px">${repItems2.length}건</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(${colCount},1fr);gap:12px">
+            ${visibleOrgs.flatMap(org => org.items.filter(i=>i.type==='대표과제').map(item => cardHtml(item, org))).join('')}
+          </div>
+        </div>`;
+    }
+
+    if (execItems2.length > 0) {
+      html += `
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+            <div style="width:3px;height:16px;border-radius:2px;background:#f97316;flex-shrink:0"></div>
+            <span style="font-size:12px;font-weight:700;color:#f97316;letter-spacing:.03em">◆ 임원별 과제</span>
+            <span style="font-size:10px;font-weight:700;color:#f97316;background:rgba(249,115,22,.12);border:1px solid rgba(249,115,22,.25);padding:2px 8px;border-radius:5px">${execItems2.length}건</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(${colCount},1fr);gap:12px">
+            ${visibleOrgs.flatMap(org => org.items.filter(i=>i.type==='임원개인').map(item => cardHtml(item, org))).join('')}
+          </div>
+        </div>`;
+    }
+
+    document.getElementById('oi2TreeBody').innerHTML = html;
 
   } else {
     // ── 전체 모드: summary 패널만 표시 ──
@@ -4842,36 +4884,117 @@ function toggleTheme() {
 
 // ═══════════════════════════════ EDIT MODE ═══════════════════════════════
 let isEditMode = false;
+
+// 편집 불가 태그/클래스/속성 정의
+const EDIT_SKIP_TAGS = new Set(['SCRIPT','STYLE','SVG','CANVAS','INPUT','TEXTAREA','SELECT','BUTTON','OPTION']);
+const EDIT_SKIP_CLASSES = [
+  'sidebar','topbar','topbar-breadcrumb','topbar-right',
+  'topbar-icon-btn','board-hotkey-btn','nav-item','nav-section-label',
+  'status-badge','badge','card-tag','bar','progress-fill','org-progress-fill',
+  'mini-bar-fill','mini-bar-lbl','bar-label','board-modal-overlay',
+  'board-item-cat','board-new','board-count-badge','version-tab',
+  'back-btn','export-btn','filter-reset','remarks-edit-btn','remarks-save-btn',
+  'tree-arrow','period-tag','as-of','edit-mode-banner',
+];
+
+function isSkippable(el) {
+  if (!el || el.nodeType !== 1) return true;
+  if (EDIT_SKIP_TAGS.has(el.tagName)) return true;
+  if (el.closest('.topbar')) return true;
+  if (el.closest('.sidebar')) return true;
+  if (el.closest('.modal-overlay')) return true;
+  if (el.closest('.board-modal-overlay')) return true;
+  if (el.getAttribute('onclick') && !el.closest('[data-editable]')) return false; // onclick 있는 건 아래서 처리
+  for (const cls of EDIT_SKIP_CLASSES) {
+    if (el.classList.contains(cls)) return true;
+  }
+  // 버튼 역할 요소 스킵
+  if (el.getAttribute('role') === 'button') return true;
+  return false;
+}
+
+function hasVisibleText(el) {
+  // 직접 자식 텍스트 노드 중 공백 아닌 것이 있으면 true
+  for (const node of el.childNodes) {
+    if (node.nodeType === 3 && node.textContent.trim()) return true;
+  }
+  return false;
+}
+
+function collectEditables() {
+  const result = [];
+  const walker = document.createTreeWalker(
+    document.querySelector('.main'),
+    NodeFilter.SHOW_ELEMENT,
+    {
+      acceptNode(node) {
+        if (EDIT_SKIP_TAGS.has(node.tagName)) return NodeFilter.FILTER_REJECT;
+        if (node.closest('.topbar')) return NodeFilter.FILTER_REJECT;
+        if (node.closest('.sidebar')) return NodeFilter.FILTER_REJECT;
+        if (node.closest('.board-modal-overlay')) return NodeFilter.FILTER_REJECT;
+        if (node.closest('.modal-overlay')) return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    }
+  );
+  while (walker.nextNode()) {
+    const el = walker.currentNode;
+    if (isSkippable(el)) continue;
+    if (!hasVisibleText(el)) continue;
+    result.push(el);
+  }
+  return result;
+}
+
 function toggleEditMode() {
   isEditMode = !isEditMode;
   document.body.classList.toggle('edit-mode', isEditMode);
-  const btn = document.getElementById('editToggleBtn');
+  const btn   = document.getElementById('editToggleBtn');
   const label = document.getElementById('editLabel');
 
   if (isEditMode) {
     btn.classList.add('active-edit');
     label.textContent = '편집 종료';
-    // enable contenteditable on all data-editable elements
+
+    // 기존 data-editable 처리
     document.querySelectorAll('[data-editable]').forEach(el => {
       el.contentEditable = 'true';
       el.setAttribute('spellcheck', 'false');
     });
+
+    // 동적으로 수집한 모든 텍스트 요소
+    collectEditables().forEach(el => {
+      if (el.isContentEditable) return; // 이미 처리됨
+      el.contentEditable = 'true';
+      el.setAttribute('spellcheck', 'false');
+      el.setAttribute('data-auto-editable', 'true');
+    });
+
   } else {
     btn.classList.remove('active-edit');
     label.textContent = '편집 모드';
+
+    // 기존 data-editable 복원
     document.querySelectorAll('[data-editable]').forEach(el => {
       el.contentEditable = 'false';
-      // blur to commit any in-progress edit
+      el.blur();
+    });
+
+    // 동적으로 추가한 편집 속성 제거
+    document.querySelectorAll('[data-auto-editable]').forEach(el => {
+      el.contentEditable = 'false';
+      el.removeAttribute('data-auto-editable');
       el.blur();
     });
   }
 }
 
-// Prevent edit-mode clicks from navigating (e.g. org-card / table rows)
+// 편집 모드 중 클릭 시 네비게이션 차단 + 포커스 허용
 document.addEventListener('click', function(e) {
   if (!isEditMode) return;
-  const editable = e.target.closest('[data-editable]');
-  if (editable) {
+  const target = e.target;
+  // contenteditable 요소 클릭이면 네비게이션 차단
+  if (target.isContentEditable || target.closest('[contenteditable="true"]')) {
     e.stopPropagation();
   }
 }, true);
