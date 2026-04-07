@@ -4984,6 +4984,7 @@ function renderBoardList() {
           <span>${p.date}</span>
           <span>👁 ${p.views}</span>
           ${p.comments.length > 0 ? `<span>💬 ${p.comments.length}</span>` : ''}
+          <button onclick="event.stopPropagation();deletePost(${p.id})" style="padding:3px 9px;border-radius:6px;border:1px solid rgba(239,68,68,.3);background:rgba(239,68,68,.07);color:#ef4444;font-size:10px;font-weight:700;font-family:var(--font);cursor:pointer;transition:background .15s" onmouseover="this.style.background='rgba(239,68,68,.16)'" onmouseout="this.style.background='rgba(239,68,68,.07)'">🗑</button>
         </div>
       </div>`;
     }).join('');
@@ -5010,7 +5011,8 @@ function openPost(id) {
     `<span class="board-item-cat" style="background:${cs.bg};color:${cs.color}">${CAT_ICON[post.cat]} ${post.cat}</span>`;
   document.getElementById('boardDetailTitle').textContent = post.title;
   document.getElementById('boardDetailMeta').innerHTML =
-    `<span>✍️ ${post.author}</span><span>📅 ${post.date}</span><span>👁 ${post.views}</span>`;
+    `<span>✍️ ${post.author}</span><span>📅 ${post.date}</span><span>👁 ${post.views}</span>
+     <button onclick="deletePost(${post.id})" style="margin-left:auto;display:flex;align-items:center;gap:4px;padding:4px 11px;border-radius:7px;border:1px solid rgba(239,68,68,.35);background:rgba(239,68,68,.08);color:#ef4444;font-size:11px;font-weight:700;font-family:var(--font);cursor:pointer;transition:background .15s" onmouseover="this.style.background='rgba(239,68,68,.18)'" onmouseout="this.style.background='rgba(239,68,68,.08)'">🗑 삭제</button>`;
   document.getElementById('boardDetailBody').textContent = post.body;
 
   renderComments(post);
@@ -5028,17 +5030,33 @@ function renderComments(post) {
     list.innerHTML = `<div style="font-size:12px;color:var(--text3);padding:8px 0 12px">아직 댓글이 없습니다. 첫 댓글을 남겨보세요!</div>`;
     return;
   }
-  list.innerHTML = post.comments.map(c => `
+  list.innerHTML = post.comments.map((c, i) => `
     <div class="board-comment-item">
       <div class="board-comment-avatar">${c.author.slice(0,2)}</div>
-      <div class="board-comment-bubble">
+      <div class="board-comment-bubble" style="position:relative">
         <div class="board-comment-meta">
           <span class="board-comment-author">${c.author}</span>
           <span class="board-comment-date">${c.date}</span>
+          <button onclick="deleteComment(${post.id},${i})" style="margin-left:auto;padding:2px 8px;border-radius:5px;border:1px solid rgba(239,68,68,.3);background:rgba(239,68,68,.07);color:#ef4444;font-size:10px;font-weight:700;font-family:var(--font);cursor:pointer;transition:background .15s" onmouseover="this.style.background='rgba(239,68,68,.16)'" onmouseout="this.style.background='rgba(239,68,68,.07)'">🗑 삭제</button>
         </div>
         <div class="board-comment-text">${c.text}</div>
       </div>
     </div>`).join('');
+}
+
+function deletePost(id) {
+  if (!confirm('게시물을 삭제하시겠습니까?')) return;
+  boardPosts = boardPosts.filter(p => p.id !== id);
+  backToBoardList();
+  updateBoardBadge();
+}
+
+function deleteComment(postId, commentIdx) {
+  if (!confirm('댓글을 삭제하시겠습니까?')) return;
+  const post = boardPosts.find(p => p.id === postId);
+  if (!post) return;
+  post.comments.splice(commentIdx, 1);
+  renderComments(post);
 }
 
 function submitComment() {
@@ -5049,7 +5067,7 @@ function submitComment() {
   if (!post) return;
   const now = new Date();
   const date = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
-  post.comments.push({ author: '나', text, date });
+  post.comments.push({ author: '관리자', text, date });
   input.value = '';
   renderComments(post);
 }
@@ -5083,7 +5101,7 @@ function submitBoardPost() {
   if (!body)  { document.getElementById('boardFormBody').focus();  return; }
   const now = new Date();
   const date = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
-  boardPosts.push({ id: boardNextId++, cat, title, body, author: '나', date, views: 0, comments: [], isNew: true });
+  boardPosts.push({ id: boardNextId++, cat, title, body, author: '관리자', date, views: 0, comments: [], isNew: true });
   document.getElementById('boardWriteForm').classList.remove('open');
   currentBoardTab = '전체';
   document.querySelectorAll('.board-tab').forEach((t,i) => t.classList.toggle('active', i===0));
