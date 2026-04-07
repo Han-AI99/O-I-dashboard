@@ -3617,11 +3617,13 @@ function renderOi2Summary(orgs) {
         const od = org.items.filter(i=>i.status==='재무지표').length;
         const pct = org.items.length > 0 ? Math.round(od/org.items.length*100) : 0;
         return `
-        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px;border-top:3px solid ${org.color}">
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px;border-top:3px solid ${org.color};transition:all .18s;cursor:pointer"
+          onmouseover="this.style.borderColor='rgba(59,130,246,.4)';this.style.transform='translateY(-2px)';this.style.background='var(--surface3)'"
+          onmouseout="this.style.borderColor='var(--border)';this.style.borderTopColor='${org.color}';this.style.transform='';this.style.background='var(--surface2)'">
           <!-- 카드 헤더 -->
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div onclick="showOi2Org('${org.id}', null)" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
             <span style="font-size:12px;font-weight:700;color:var(--text)">${org.name}</span>
-            <span style="font-size:10px;font-weight:700;color:${org.color};background:${org.color}18;padding:2px 8px;border-radius:5px">${org.items.length}건</span>
+            <span style="font-size:10px;font-weight:700;color:${org.color};background:${org.color}18;padding:2px 8px;border-radius:5px;display:flex;align-items:center;gap:5px">${org.items.length}건 <span style="color:var(--text3)">→</span></span>
           </div>
           <!-- 재무지표 비율 프로그레스 -->
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
@@ -3633,7 +3635,7 @@ function renderOi2Summary(orgs) {
           <!-- 과제 목록 -->
           <div style="display:flex;flex-direction:column;gap:6px">
             ${[...org.items].sort((a,b)=> a.type==='대표과제'&&b.type!=='대표과제'?-1:a.type!=='대표과제'&&b.type==='대표과제'?1:0).map(item=>`
-              <div onclick="selectOi2Item('${item.id}','${org.id}')"
+              <div onclick="event.stopPropagation();selectOi2Item('${item.id}','${org.id}')"
                 style="display:flex;align-items:center;gap:7px;cursor:pointer;padding:5px 6px;border-radius:7px;transition:background .15s;margin:0 -6px"
                 onmouseover="this.style.background='var(--surface3)'" onmouseout="this.style.background='transparent'">
                 ${typeBadge(item.type)}
