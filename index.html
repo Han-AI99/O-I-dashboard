@@ -3608,8 +3608,8 @@ function renderOi2Summary(orgs) {
       </div>
     </div>
 
-    <!-- ── 하단 조직 카드 그리드 (조직별 필터 화면에서만 표시) ── -->
-    <div style="display:grid;grid-template-columns:repeat(${orgs.length===1?'1':orgs.length<=4?'2':'3'},1fr);gap:12px">
+    <!-- ── 하단 조직 카드 그리드 ── -->
+    <div style="display:grid;grid-template-columns:repeat(${orgs.length===1?'1':orgs.length<=4?'2':'3'},1fr);gap:12px;margin-bottom:24px">
       ${orgs.map(org=>{
         const od = org.items.filter(i=>i.status==='재무지표').length;
         const pct = org.items.length > 0 ? Math.round(od/org.items.length*100) : 0;
@@ -3644,6 +3644,74 @@ function renderOi2Summary(orgs) {
           </div>
         </div>`;
       }).join('')}
+    </div>
+
+    <!-- ── 대표과제 / 임원별 과제 구분 리스트 ── -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+
+      <!-- 대표과제 리스트 -->
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:14px;overflow:hidden">
+        <div style="padding:13px 18px;background:rgba(168,85,247,.08);border-bottom:1px solid rgba(168,85,247,.18);display:flex;align-items:center;gap:8px">
+          <div style="width:3px;height:16px;border-radius:2px;background:#a855f7;flex-shrink:0"></div>
+          <span style="font-size:12px;font-weight:700;color:#a855f7;letter-spacing:.03em">★ 대표과제</span>
+          <span style="margin-left:auto;font-size:10px;font-weight:700;color:#a855f7;background:rgba(168,85,247,.15);border:1px solid rgba(168,85,247,.25);padding:2px 8px;border-radius:5px">
+            ${orgs.reduce((s,o)=>s+o.items.filter(i=>i.type==='대표과제').length,0)}건
+          </span>
+        </div>
+        <div style="display:flex;flex-direction:column">
+          ${orgs.flatMap(org =>
+            org.items
+              .filter(i => i.type === '대표과제')
+              .map(item => `
+                <div onclick="selectOi2Item('${item.id}','${org.id}')"
+                  style="display:flex;align-items:center;gap:10px;padding:11px 18px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s"
+                  onmouseover="this.style.background='var(--surface3)'" onmouseout="this.style.background='transparent'">
+                  <div style="width:6px;height:6px;border-radius:50%;background:${org.color};flex-shrink:0"></div>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:12.5px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${item.name}">${item.name}</div>
+                    <div style="display:flex;align-items:center;gap:6px;margin-top:3px">
+                      <span style="font-size:10px;color:var(--text3)">${org.name}</span>
+                      ${item.cascadingOrg ? `<span style="font-size:9px;color:#a855f7;background:rgba(168,85,247,.1);padding:1px 5px;border-radius:3px">↘ Cascading</span>` : ''}
+                    </div>
+                  </div>
+                  <span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;background:${sBg[item.status]};color:${sColor[item.status]};flex-shrink:0">${item.status}</span>
+                  <span style="font-size:11px;color:var(--text3);flex-shrink:0">›</span>
+                </div>`)
+          ).join('') || `<div style="padding:28px;text-align:center;font-size:12px;color:var(--text3)">대표과제가 없습니다</div>`}
+        </div>
+      </div>
+
+      <!-- 임원별 과제 리스트 -->
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:14px;overflow:hidden">
+        <div style="padding:13px 18px;background:rgba(249,115,22,.08);border-bottom:1px solid rgba(249,115,22,.18);display:flex;align-items:center;gap:8px">
+          <div style="width:3px;height:16px;border-radius:2px;background:#f97316;flex-shrink:0"></div>
+          <span style="font-size:12px;font-weight:700;color:#f97316;letter-spacing:.03em">◆ 임원별 과제</span>
+          <span style="margin-left:auto;font-size:10px;font-weight:700;color:#f97316;background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.25);padding:2px 8px;border-radius:5px">
+            ${orgs.reduce((s,o)=>s+o.items.filter(i=>i.type==='임원개인').length,0)}건
+          </span>
+        </div>
+        <div style="display:flex;flex-direction:column">
+          ${orgs.flatMap(org =>
+            org.items
+              .filter(i => i.type === '임원개인')
+              .map(item => `
+                <div onclick="selectOi2Item('${item.id}','${org.id}')"
+                  style="display:flex;align-items:center;gap:10px;padding:11px 18px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s"
+                  onmouseover="this.style.background='var(--surface3)'" onmouseout="this.style.background='transparent'">
+                  <div style="width:6px;height:6px;border-radius:50%;background:${org.color};flex-shrink:0"></div>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:12.5px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${item.name}">${item.name}</div>
+                    <div style="margin-top:3px">
+                      <span style="font-size:10px;color:var(--text3)">${org.name}</span>
+                    </div>
+                  </div>
+                  <span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;background:${sBg[item.status]};color:${sColor[item.status]};flex-shrink:0">${item.status}</span>
+                  <span style="font-size:11px;color:var(--text3);flex-shrink:0">›</span>
+                </div>`)
+          ).join('') || `<div style="padding:28px;text-align:center;font-size:12px;color:var(--text3)">임원별 과제가 없습니다</div>`}
+        </div>
+      </div>
+
     </div>`;
 
   // 도넛 그리기 (멀티 세그먼트)
