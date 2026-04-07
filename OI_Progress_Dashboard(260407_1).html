@@ -1,0 +1,4277 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>O/I Progress Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2236;
+    --surface3: #1f2d44;
+    --border: rgba(255,255,255,0.07);
+    --accent: #3b82f6;
+    --accent2: #06b6d4;
+    --green: #10b981;
+    --yellow: #f59e0b;
+    --red: #ef4444;
+    --text: #f1f5f9;
+    --text2: #94a3b8;
+    --text3: #64748b;
+    --card-radius: 16px;
+    --font: 'Pretendard', 'Apple SD Gothic Neo', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    position: fixed;
+    left: 0; top: 0; bottom: 0;
+    width: 240px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    z-index: 100;
+    transition: transform .3s ease;
+  }
+
+  .sidebar-logo {
+    padding: 28px 24px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-logo .brand {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .15em;
+    color: var(--text3);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .sidebar-logo .title {
+    font-size: 20px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #3b82f6, #06b6d4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -.01em;
+  }
+
+  .sidebar-nav {
+    padding: 16px 12px;
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .nav-section {
+    margin-bottom: 24px;
+  }
+  .nav-section-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--text3);
+    padding: 0 12px;
+    margin-bottom: 8px;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--text2);
+    transition: all .15s;
+    text-decoration: none;
+  }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active {
+    background: rgba(59,130,246,0.15);
+    color: var(--accent);
+  }
+  .nav-item .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--text3);
+    flex-shrink: 0;
+  }
+  .nav-item.active .dot { background: var(--accent); }
+  .nav-item .badge {
+    margin-left: auto;
+    font-size: 10px;
+    background: rgba(59,130,246,0.2);
+    color: var(--accent);
+    padding: 2px 7px;
+    border-radius: 99px;
+    font-weight: 600;
+  }
+
+  .sidebar-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--text3);
+  }
+  .sidebar-footer strong { color: var(--text2); }
+
+  /* ── MAIN ── */
+  .main {
+    margin-left: 240px;
+    min-height: 100vh;
+  }
+
+  /* ── TOPBAR ── */
+  .topbar {
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 32px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(10,14,26,.8);
+    backdrop-filter: blur(8px);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .topbar-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text3);
+  }
+  .topbar-breadcrumb .current {
+    color: var(--text);
+    font-weight: 600;
+  }
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  .period-tag {
+    background: rgba(6,182,212,0.12);
+    color: var(--accent2);
+    padding: 5px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .02em;
+    border: 1px solid rgba(6,182,212,0.2);
+  }
+  .as-of {
+    font-size: 12px;
+    color: var(--text3);
+  }
+
+  /* ── PAGE ── */
+  .page {
+    display: none;
+    padding: 32px;
+    animation: fadeIn .3s ease;
+  }
+  .page.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+  .page-header {
+    margin-bottom: 28px;
+  }
+  .page-header h1 {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -.02em;
+    margin-bottom: 4px;
+  }
+  .page-header p {
+    font-size: 13.5px;
+    color: var(--text2);
+  }
+
+  /* ── KPI CARDS ── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--card-radius);
+    padding: 22px 24px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color .2s, transform .2s;
+  }
+  .kpi-card:hover { border-color: rgba(59,130,246,.3); transform: translateY(-1px); }
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--kpi-color, var(--accent));
+    opacity: .7;
+  }
+  .kpi-label {
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 10px;
+  }
+  .kpi-value {
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: -.02em;
+    line-height: 1;
+    margin-bottom: 6px;
+    color: var(--kpi-color, var(--text));
+  }
+  .kpi-sub {
+    font-size: 12px;
+    color: var(--text2);
+  }
+  .kpi-delta {
+    font-size: 12px;
+    font-weight: 600;
+    margin-left: 6px;
+  }
+  .kpi-delta.up { color: var(--green); }
+  .kpi-delta.down { color: var(--red); }
+
+  /* ── GRID LAYOUT ── */
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+  .grid-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+  .col-span-2 { grid-column: span 2; }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--card-radius);
+    padding: 24px;
+    transition: border-color .2s;
+  }
+  .card:hover { border-color: rgba(59,130,246,.2); }
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .card-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .card-tag {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text3);
+    background: var(--surface2);
+    padding: 3px 10px;
+    border-radius: 6px;
+    letter-spacing: .04em;
+  }
+
+  /* ── DONUT CHART ── */
+  .donut-wrap {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+  }
+  .donut-canvas-wrap {
+    position: relative;
+    flex-shrink: 0;
+  }
+  .donut-center {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    pointer-events: none;
+  }
+  .donut-center .pct {
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--text);
+  }
+  .donut-center .lbl {
+    font-size: 10px;
+    color: var(--text3);
+    margin-top: 2px;
+    font-weight: 500;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+  .donut-legend {
+    flex: 1;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .legend-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .legend-dot {
+    width: 8px; height: 8px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+  .legend-name {
+    font-size: 12.5px;
+    color: var(--text2);
+  }
+  .legend-val {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  /* ── STATUS BADGES ── */
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .04em;
+  }
+  .status-badge::before {
+    content: '';
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+  .on-track { background: rgba(16,185,129,.12); color: var(--green); }
+  .at-risk { background: rgba(245,158,11,.12); color: var(--yellow); }
+  .critical { background: rgba(239,68,68,.12); color: var(--red); }
+
+  /* ── ORG SUMMARY CARDS ── */
+  .org-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+  .org-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    cursor: pointer;
+    transition: all .2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .org-card:hover {
+    border-color: rgba(59,130,246,.4);
+    background: var(--surface3);
+    transform: translateY(-2px);
+  }
+  .org-card::after {
+    content: '→';
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text3);
+    font-size: 14px;
+    transition: right .2s, color .2s;
+  }
+  .org-card:hover::after { right: 10px; color: var(--accent); }
+  .org-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 10px;
+    padding-right: 20px;
+  }
+  .org-stats {
+    display: flex;
+    gap: 16px;
+    align-items: flex-end;
+  }
+  .org-stat-val {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -.02em;
+    line-height: 1;
+  }
+  .org-stat-label {
+    font-size: 10px;
+    color: var(--text3);
+    font-weight: 500;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+  .org-progress-bar {
+    height: 2px;
+    background: var(--surface);
+    border-radius: 2px;
+    margin-top: 12px;
+    overflow: hidden;
+  }
+  .org-progress-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: var(--bar-color, var(--accent));
+    transition: width 1s cubic-bezier(.16,1,.3,1);
+  }
+
+  /* ── TABLE ── */
+  .table-wrap {
+    overflow-x: auto;
+    margin-top: 4px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  thead th {
+    padding: 10px 14px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--text3);
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    white-space: nowrap;
+  }
+  thead th:first-child { border-radius: 8px 0 0 8px; }
+  thead th:last-child { border-radius: 0 8px 8px 0; }
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background .15s;
+  }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--surface2); }
+  td {
+    padding: 12px 14px;
+    color: var(--text2);
+    vertical-align: middle;
+  }
+  td.primary { color: var(--text); font-weight: 500; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+  .progress-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 140px;
+  }
+  .progress-bar {
+    flex: 1;
+    height: 5px;
+    background: var(--surface3);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 99px;
+    background: var(--bar-color, var(--accent));
+    transition: width 1.2s cubic-bezier(.16,1,.3,1);
+  }
+  .progress-pct {
+    font-size: 12px;
+    font-weight: 600;
+    min-width: 38px;
+    text-align: right;
+    color: var(--text);
+  }
+
+  /* ── MINI DONUT RING ── */
+  .ring-wrap {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 16px;
+  }
+  .ring-wrap-2col {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px 12px;
+  }
+  .ring-item {
+    text-align: center;
+  }
+  .ring-item svg { display: block; margin: 0 auto 8px; }
+  .ring-item .ring-val {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1;
+  }
+  .ring-item .ring-lbl {
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 3px;
+  }
+
+
+  /* ── 연도 탭 버튼 ── */
+  .year-tab-btn {
+    padding: 4px 12px;
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    color: var(--text3);
+    background: var(--surface2);
+    font-family: var(--font);
+    transition: all .15s;
+  }
+  .year-tab-btn:hover { color: var(--text2); border-color: rgba(59,130,246,.3); }
+  .year-tab-btn.active {
+    background: rgba(59,130,246,.15);
+    border-color: rgba(59,130,246,.4);
+    color: var(--accent);
+  }
+  /* ── MONTHLY BAR ── */
+  .bar-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    height: 120px;
+    padding-top: 10px;
+  }
+  .bar-group {
+    flex: 1;
+    display: flex;
+    gap: 3px;
+    align-items: flex-end;
+    height: 100%;
+    position: relative;
+  }
+  .bar {
+    flex: 1;
+    border-radius: 4px 4px 0 0;
+    transition: height 1s cubic-bezier(.16,1,.3,1);
+    position: relative;
+    cursor: default;
+  }
+  .bar.actual { background: linear-gradient(180deg, #3b82f6, #1d4ed8); }
+  .bar.plan { background: rgba(100,116,139,.35); }
+  .bar-label {
+    position: absolute;
+    bottom: -18px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 9px;
+    color: var(--text3);
+    white-space: nowrap;
+  }
+  .bar-axis-labels {
+    display: flex;
+    gap: 8px;
+    margin-top: 24px;
+  }
+  .bar-axis-labels span {
+    flex: 1;
+    text-align: center;
+    font-size: 9.5px;
+    color: var(--text3);
+  }
+
+  /* ── DETAIL PAGE ── */
+  .detail-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  .back-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text2);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all .15s;
+    text-decoration: none;
+  }
+  .back-btn:hover { background: var(--surface3); color: var(--text); }
+
+  .task-status-strip {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+
+  /* ── TREE NAV ── */
+  .nav-parent {
+    justify-content: flex-start;
+    cursor: pointer;
+    user-select: none;
+  }
+  .tree-arrow {
+    margin-left: auto;
+    font-size: 14px;
+    color: var(--text3);
+    transition: transform .22s ease;
+    display: inline-block;
+    line-height: 1;
+  }
+  .nav-subtree {
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height .5s ease;
+  }
+  .nav-subtree.open {
+    max-height: 2000px;
+  }
+  .nav-item.nav-sub {
+    padding-left: 22px;
+    font-size: 12.5px;
+  }
+  .sub-dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--text3);
+    flex-shrink: 0;
+    opacity: .6;
+  }
+  .nav-item.nav-sub.active .sub-dot {
+    background: var(--accent);
+    opacity: 1;
+  }
+  .nav-sub-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 4px 12px;
+  }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 99px; }
+
+  /* ── DIVIDER ── */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 20px 0;
+  }
+
+  /* ── VERSION TAG ── */
+  .version-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+  .version-tab {
+    padding: 9px 22px 9px 28px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    color: var(--text3);
+    background: var(--surface);
+    transition: all .2s;
+    position: relative;
+  }
+  .version-tab::before {
+    content: '';
+    position: absolute;
+    left: 11px; top: 50%;
+    transform: translateY(-50%);
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    transition: opacity .2s;
+  }
+  .version-tab:nth-child(1)::before { background: #3b82f6; }
+  .version-tab:nth-child(2)::before { background: #10b981; }
+  .version-tab:hover { color: var(--text2); }
+  .version-tab:nth-child(1):hover { background: rgba(59,130,246,.08); border-color: rgba(59,130,246,.25); }
+  .version-tab:nth-child(2):hover { background: rgba(16,185,129,.08); border-color: rgba(16,185,129,.25); }
+  .version-tab.active { color: #fff; border-color: transparent; }
+  .version-tab.active::before { background: rgba(255,255,255,.8); }
+  .version-tab:nth-child(1).active {
+    background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+    box-shadow: 0 4px 14px rgba(59,130,246,.4);
+  }
+  .version-tab:nth-child(2).active {
+    background: linear-gradient(135deg, #059669, #10b981);
+    box-shadow: 0 4px 14px rgba(16,185,129,.4);
+  }
+
+  /* ── 2.0 placeholder ── */
+  .oi2-placeholder {
+    background: var(--surface);
+    border: 1px dashed rgba(59,130,246,.25);
+    border-radius: var(--card-radius);
+    padding: 60px 40px;
+    text-align: center;
+    color: var(--text3);
+  }
+  .oi2-placeholder .icon { font-size: 40px; margin-bottom: 16px; }
+  .oi2-placeholder h3 { font-size: 16px; color: var(--text2); margin-bottom: 8px; }
+  .oi2-placeholder p { font-size: 13px; line-height: 1.6; }
+
+  /* ── TOOLTIP ── */
+  [data-tip] {
+    position: relative;
+  }
+  [data-tip]:hover::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1e293b;
+    color: var(--text);
+    font-size: 11px;
+    white-space: nowrap;
+    padding: 5px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  /* ── CRITICAL ALERT BANNER ── */
+  .alert-banner {
+    background: rgba(239,68,68,0.1);
+    border: 1px solid rgba(239,68,68,0.3);
+    border-radius: 12px;
+    padding: 12px 20px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    transition: background .2s;
+  }
+  .alert-banner:hover { background: rgba(239,68,68,0.16); }
+  .alert-banner-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .alert-banner-text { flex: 1; }
+  .alert-banner-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--red);
+    margin-bottom: 2px;
+  }
+  .alert-banner-sub {
+    font-size: 12px;
+    color: rgba(239,68,68,.7);
+  }
+  .alert-banner-arrow {
+    font-size: 14px;
+    color: var(--red);
+    opacity: .6;
+  }
+
+  /* ── FILTER BAR ── */
+  .filter-bar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .filter-input {
+    flex: 1;
+    min-width: 180px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 14px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: var(--font);
+    outline: none;
+    transition: border-color .2s;
+  }
+  .filter-input:focus { border-color: rgba(59,130,246,.4); }
+  .filter-input::placeholder { color: var(--text3); }
+  .filter-select {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 12px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: var(--font);
+    outline: none;
+    cursor: pointer;
+    transition: border-color .2s;
+  }
+  .filter-select:focus { border-color: rgba(59,130,246,.4); }
+  .filter-select option { background: #1a2236; }
+  .filter-count {
+    font-size: 12px;
+    color: var(--text3);
+    white-space: nowrap;
+  }
+  .filter-reset {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text3);
+    font-size: 12px;
+    padding: 7px 12px;
+    cursor: pointer;
+    font-family: var(--font);
+    transition: all .15s;
+  }
+  .filter-reset:hover { border-color: rgba(239,68,68,.4); color: var(--red); }
+
+  /* ── EXPORT BUTTON ── */
+  .export-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(16,185,129,.1);
+    border: 1px solid rgba(16,185,129,.25);
+    border-radius: 8px;
+    color: var(--green);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 14px;
+    cursor: pointer;
+    font-family: var(--font);
+    transition: all .2s;
+  }
+  .export-btn:hover { background: rgba(16,185,129,.18); }
+  .export-btn-group {
+    display: flex;
+    gap: 8px;
+  }
+
+  /* ── OWNER TAG ── */
+  .owner-tag {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text2);
+  }
+  .owner-avatar {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: rgba(59,130,246,.2);
+    color: var(--accent);
+    font-size: 9px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  /* ── MONTHLY MINI BAR (task detail) ── */
+  .mini-bar-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 5px;
+    height: 90px;
+  }
+  .mini-bar-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    height: 100%;
+    justify-content: flex-end;
+  }
+  .mini-bar-fill {
+    width: 100%;
+    border-radius: 3px 3px 0 0;
+    background: linear-gradient(180deg, #3b82f6, #1d4ed8);
+    transition: height 1s cubic-bezier(.16,1,.3,1);
+    min-height: 2px;
+    position: relative;
+    cursor: default;
+  }
+  .mini-bar-lbl {
+    font-size: 8px;
+    color: var(--text3);
+    white-space: nowrap;
+  }
+
+  /* ── FORECAST LINE ── */
+  .forecast-legend {
+    display: flex;
+    gap: 16px;
+    margin-top: 10px;
+  }
+  .forecast-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--text3);
+  }
+  .forecast-dot {
+    width: 10px; height: 10px;
+    border-radius: 2px;
+  }
+
+  /* ── ORG COMPARE BAR ── */
+  .compare-bar-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding-top: 4px;
+  }
+  .compare-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+  }
+  .compare-row:hover .compare-fill { filter: brightness(1.2); }
+  .compare-org-name {
+    font-size: 12px;
+    color: var(--text2);
+    width: 130px;
+    flex-shrink: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .compare-bar-outer {
+    flex: 1;
+    height: 16px;
+    background: var(--surface3);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+  .compare-fill {
+    height: 100%;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    padding-left: 8px;
+    font-size: 10px;
+    font-weight: 700;
+    color: rgba(255,255,255,.85);
+    transition: width 1s cubic-bezier(.16,1,.3,1);
+    white-space: nowrap;
+    opacity: .82;
+  }
+  .compare-pct-label {
+    font-size: 12px;
+    font-weight: 700;
+    width: 52px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  /* ── CHANGELOG ── */
+  .changelog-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    position: relative;
+  }
+  .changelog-timeline::before {
+    content: '';
+    position: absolute;
+    left: 47px;
+    top: 0; bottom: 0;
+    width: 1px;
+    background: var(--border);
+  }
+  .cl-entry {
+    display: flex;
+    gap: 16px;
+    padding-bottom: 20px;
+    position: relative;
+  }
+  .cl-entry:last-child { padding-bottom: 0; }
+  .cl-date-wrap {
+    width: 80px;
+    flex-shrink: 0;
+    text-align: right;
+    padding-top: 2px;
+  }
+  .cl-version {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: .06em;
+  }
+  .cl-date {
+    font-size: 10px;
+    color: var(--text3);
+    margin-top: 2px;
+  }
+  .cl-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    flex-shrink: 0;
+    margin-top: 4px;
+    position: relative;
+    z-index: 1;
+    border: 2px solid var(--bg);
+  }
+  .cl-changes {
+    flex: 1;
+  }
+  .cl-change-item {
+    font-size: 12px;
+    color: var(--text2);
+    padding: 3px 0;
+    line-height: 1.5;
+  }
+  .cl-change-item::before {
+    content: '·';
+    margin-right: 6px;
+    color: var(--text3);
+  }
+
+
+
+
+  /* ── Cascading 하위 조직 트리 노드 ── */
+  .cascading-sub-node {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 16px 5px 40px;
+    font-size: 11.5px;
+    color: var(--text3);
+    border-left: 2px solid transparent;
+    position: relative;
+    cursor: default;
+  }
+  .cascading-sub-node::before {
+    content: '';
+    position: absolute;
+    left: 28px;
+    top: 50%;
+    width: 8px;
+    height: 1px;
+    background: var(--border);
+  }
+  .cascading-sub-node .csn-dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--text3);
+    flex-shrink: 0;
+    opacity: .5;
+  }
+  /* ── Cascading 조직명 태그 (대표과제) ── */
+  .cascading-org-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--text3);
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .cascading-org-tag::before {
+    content: '↳';
+    font-size: 9px;
+    opacity: .7;
+  }
+  /* ── O/I 일상화 과제 유형 뱃지 ── */
+  .task-type-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 9.5px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 5px;
+    letter-spacing: .03em;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .task-type-badge.rep {
+    background: rgba(168,85,247,.15);
+    color: #a855f7;
+    border: 1px solid rgba(168,85,247,.25);
+  }
+  .task-type-badge.exec {
+    background: rgba(251,146,60,.15);
+    color: #f97316;
+    border: 1px solid rgba(251,146,60,.25);
+  }
+  /* ── O/I 일상화 LAYOUT ── */
+  .oi2-layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 16px;
+    align-items: start;
+  }
+
+  /* 좌: 트리 패널 */
+  .oi2-tree-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--card-radius);
+    overflow: hidden;
+    position: sticky;
+    top: 80px;
+  }
+  .oi2-tree-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text2);
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+  .oi2-tree-body {
+    padding: 8px 0;
+    max-height: calc(100vh - 260px);
+    overflow-y: auto;
+  }
+  .oi2-tree-org {
+    padding: 0;
+  }
+  .oi2-tree-org-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text2);
+    transition: background .15s;
+    user-select: none;
+  }
+  .oi2-tree-org-header:hover { background: var(--surface2); }
+  .oi2-tree-org-bar {
+    width: 3px; height: 14px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+  .oi2-tree-org-arrow {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--text3);
+    transition: transform .2s;
+  }
+  .oi2-tree-org-arrow.open { transform: rotate(90deg); }
+  .oi2-tree-items {
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height .25s ease;
+  }
+  .oi2-tree-items.open { max-height: 500px; }
+  .oi2-tree-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 16px 7px 28px;
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--text3);
+    transition: background .12s, color .12s;
+    border-left: 2px solid transparent;
+  }
+  .oi2-tree-item:hover { background: var(--surface2); color: var(--text2); }
+  .oi2-tree-item.active {
+    background: rgba(59,130,246,.08);
+    color: var(--accent);
+    border-left-color: var(--accent);
+    font-weight: 600;
+  }
+  .oi2-tree-item-dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    opacity: .5;
+  }
+  .oi2-tree-item.active .oi2-tree-item-dot { opacity: 1; }
+  .oi2-item-status-dot {
+    margin-left: auto;
+    font-size: 9px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* 우: 상세 패널 */
+  .oi2-detail-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--card-radius);
+    min-height: 500px;
+  }
+  .oi2-detail-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    text-align: center;
+  }
+  .oi2-detail-content { padding: 28px; }
+  .oi2-detail-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .oi2-detail-org-badge {
+    padding: 4px 12px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .oi2-detail-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.3;
+    margin-bottom: 6px;
+  }
+  .oi2-detail-meta {
+    font-size: 12px;
+    color: var(--text3);
+    display: flex;
+    gap: 12px;
+  }
+  .oi2-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .oi2-section-card {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .oi2-section-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 18px;
+    background: var(--surface2);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text2);
+    border-bottom: 1px solid var(--border);
+    letter-spacing: .01em;
+  }
+  .oi2-section-num {
+    font-size: 10px;
+    font-weight: 800;
+    color: var(--accent);
+    background: rgba(59,130,246,.12);
+    padding: 2px 7px;
+    border-radius: 5px;
+    letter-spacing: .06em;
+  }
+  .oi2-section-body { padding: 18px; }
+  .oi2-view-text {
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.7;
+    white-space: pre-wrap;
+    min-height: 22px;
+  }
+  .oi2-view-text:empty::before {
+    content: '(미입력)';
+    color: var(--text3);
+    font-style: italic;
+    font-size: 12px;
+  }
+  .oi2-textarea {
+    width: 100%;
+    background: var(--surface3);
+    border: 1px solid rgba(59,130,246,.3);
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: var(--font);
+    line-height: 1.65;
+    resize: vertical;
+    outline: none;
+    transition: border-color .2s;
+  }
+  .oi2-textarea:focus { border-color: var(--accent); }
+  .oi2-textarea::placeholder { color: var(--text3); }
+  .oi2-input {
+    background: var(--surface3);
+    border: 1px solid rgba(59,130,246,.3);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: var(--font);
+    outline: none;
+    transition: border-color .2s;
+    width: 100%;
+  }
+  .oi2-input:focus { border-color: var(--accent); }
+  .oi2-input::placeholder { color: var(--text3); }
+
+  /* 기대효과 KPI행 */
+  .oi2-effect-kpi-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .oi2-effect-kpi-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text3);
+    white-space: nowrap;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    width: 60px;
+    flex-shrink: 0;
+  }
+
+  /* 3개년 target */
+  .oi2-effect-targets {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  .oi2-target-col {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    text-align: center;
+  }
+  .oi2-target-year {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text3);
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .oi2-target-val {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+    text-align: center;
+    min-height: 26px;
+  }
+  .oi2-target-input {
+    text-align: center;
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  /* ── O/I 일상화 요약 테이블 ── */
+  .oi2-summary-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .oi2-summary-table thead th {
+    padding: 9px 14px;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--text3);
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    white-space: nowrap;
+  }
+  .oi2-summary-table thead th:first-child { border-radius: 8px 0 0 8px; }
+  .oi2-summary-table thead th:last-child  { border-radius: 0 8px 8px 0; }
+  .oi2-summary-table tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background .13s;
+  }
+  .oi2-summary-table tbody tr:last-child { border-bottom: none; }
+  .oi2-summary-table tbody tr:hover { background: var(--surface2); }
+  .oi2-summary-table td { padding: 12px 14px; color: var(--text2); vertical-align: middle; }
+  .oi2-org-color-bar { width: 4px; height: 16px; border-radius: 2px; flex-shrink: 0; }
+  .oi2-type-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+  .oi2-type-tag { font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 6px; white-space: nowrap; }
+  .oi2-count-chip { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; font-size: 12px; font-weight: 700; }
+
+  /* 대시보드 O/I 일상화 요약 */
+  .dash-oi2-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 20px; }
+  .dash-oi2-card {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 12px;
+    padding: 16px 18px; cursor: pointer; transition: border-color .2s, transform .15s;
+  }
+  .dash-oi2-card:hover { border-color: rgba(59,130,246,.35); transform: translateY(-1px); }
+  .dash-oi2-card-top { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .dash-oi2-org-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .dash-oi2-org-name { font-size: 12px; font-weight: 700; color: var(--text2); }
+  .dash-oi2-count { margin-left: auto; font-size: 11px; font-weight: 700; color: var(--text3); }
+  .dash-oi2-items-list { display: flex; flex-direction: column; gap: 5px; }
+  .dash-oi2-item-row { display: flex; align-items: center; gap: 7px; font-size: 11px; color: var(--text3); line-height: 1.35; }
+  .dash-oi2-item-dot { width: 4px; height: 4px; border-radius: 50%; flex-shrink: 0; opacity: .5; }
+  .dash-oi2-status { margin-left: auto; font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 4px; white-space: nowrap; flex-shrink: 0; }
+
+
+
+
+  /* ── Cascading 하위 조직 트리 노드 ── */
+  .cascading-sub-node {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 16px 5px 40px;
+    font-size: 11.5px;
+    color: var(--text3);
+    border-left: 2px solid transparent;
+    position: relative;
+    cursor: default;
+  }
+  .cascading-sub-node::before {
+    content: '';
+    position: absolute;
+    left: 28px;
+    top: 50%;
+    width: 8px;
+    height: 1px;
+    background: var(--border);
+  }
+  .cascading-sub-node .csn-dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--text3);
+    flex-shrink: 0;
+    opacity: .5;
+  }
+  /* ── Cascading 조직명 태그 (대표과제) ── */
+  .cascading-org-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--text3);
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .cascading-org-tag::before {
+    content: '↳';
+    font-size: 9px;
+    opacity: .7;
+  }
+  /* ── O/I 일상화 과제 유형 뱃지 ── */
+  .task-type-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 9.5px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 5px;
+    letter-spacing: .03em;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .task-type-badge.rep {
+    background: rgba(168,85,247,.15);
+    color: #a855f7;
+    border: 1px solid rgba(168,85,247,.25);
+  }
+  .task-type-badge.exec {
+    background: rgba(251,146,60,.15);
+    color: #f97316;
+    border: 1px solid rgba(251,146,60,.25);
+  }
+  /* ── O/I 일상화 LAYOUT ── */
+  .oi2-tracker {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .oi2-org-block {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+  }
+  .oi2-org-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .oi2-org-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .oi2-org-progress {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text2);
+  }
+  .oi2-items {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .oi2-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: var(--surface);
+    border-radius: 8px;
+    font-size: 12.5px;
+  }
+  .oi2-item-name { flex: 1; color: var(--text2); }
+  .oi2-item-due { font-size: 11px; color: var(--text3); }
+  .oi2-status {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 5px;
+    letter-spacing: .04em;
+  }
+  .oi2-status.done { background: rgba(16,185,129,.15); color: var(--green); }
+  .oi2-status.wip { background: rgba(59,130,246,.15); color: var(--accent); }
+  .oi2-status.review { background: rgba(245,158,11,.15); color: var(--yellow); }
+
+  /* ── MONTHLY REMARKS ── */
+  .remarks-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-top: 4px;
+  }
+  .remarks-cell {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    min-height: 96px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transition: border-color .2s;
+    position: relative;
+  }
+  .remarks-cell:hover { border-color: rgba(59,130,246,.25); }
+  .remarks-month-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--text3);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .remarks-month-label .month-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    opacity: .5;
+    flex-shrink: 0;
+  }
+  .remarks-month-label .month-dot.has-remark {
+    opacity: 1;
+    background: var(--green);
+  }
+  .remarks-text-view {
+    font-size: 12px;
+    color: var(--text2);
+    line-height: 1.55;
+    flex: 1;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+  .remarks-text-view.empty {
+    color: var(--text3);
+    font-style: italic;
+  }
+  .remarks-textarea {
+    flex: 1;
+    background: var(--surface3);
+    border: 1px solid rgba(59,130,246,.3);
+    border-radius: 6px;
+    padding: 7px 9px;
+    color: var(--text);
+    font-size: 12px;
+    font-family: var(--font);
+    line-height: 1.55;
+    resize: none;
+    outline: none;
+    min-height: 60px;
+    width: 100%;
+    transition: border-color .2s;
+  }
+  .remarks-textarea:focus { border-color: var(--accent); }
+  .remarks-textarea::placeholder { color: var(--text3); }
+  .remarks-edit-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 13px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text2);
+    font-size: 12px;
+    font-weight: 600;
+    font-family: var(--font);
+    cursor: pointer;
+    transition: all .18s;
+  }
+  .remarks-edit-btn:hover { background: var(--surface3); color: var(--text); border-color: rgba(59,130,246,.35); }
+  .remarks-save-btn {
+    background: rgba(16,185,129,.12);
+    border-color: rgba(16,185,129,.3);
+    color: var(--green);
+  }
+  .remarks-save-btn:hover { background: rgba(16,185,129,.22); color: var(--green); border-color: rgba(16,185,129,.5); }
+  .remarks-cell.edit-active {
+    border-color: rgba(59,130,246,.4);
+    background: var(--surface3);
+  }
+
+  body.light-mode .oi2-textarea,
+  body.light-mode .oi2-input {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+  body.light-mode .oi2-target-col {
+    background: #f8fafc;
+  }
+  body.light-mode .oi2-tree-panel,
+  body.light-mode .oi2-detail-panel {
+    background: #ffffff;
+  }
+  body.light-mode .oi2-tree-org-header:hover,
+  body.light-mode .oi2-tree-item:hover {
+    background: #f1f5f9;
+  }
+  body.light-mode .oi2-tree-item.active {
+    background: rgba(59,130,246,.07);
+  }
+
+  /* ── LIGHT MODE ── */
+  body.light-mode {
+    --bg: #f1f5f9;
+    --surface: #ffffff;
+    --surface2: #f8fafc;
+    --surface3: #e2e8f0;
+    --border: rgba(0,0,0,0.08);
+    --text: #0f172a;
+    --text2: #475569;
+    --text3: #94a3b8;
+  }
+  body.light-mode .topbar {
+    background: rgba(241,245,249,.9);
+  }
+  body.light-mode .bar.actual { background: linear-gradient(180deg,#3b82f6,#2563eb); }
+  body.light-mode .mini-bar-fill { background: linear-gradient(180deg,#3b82f6,#2563eb); }
+  body.light-mode .filter-select option { background: #ffffff; }
+  body.light-mode .sidebar {
+    background: #ffffff;
+    border-right-color: rgba(0,0,0,0.08);
+  }
+  body.light-mode .compare-fill { color: rgba(255,255,255,.95); }
+  body.light-mode [data-tip]:hover::after { background: #1e293b; color: #f1f5f9; }
+
+  /* ── TOPBAR ICON BUTTONS ── */
+  .topbar-icon-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 13px;
+    border-radius: 9px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text2);
+    font-size: 12px;
+    font-weight: 600;
+    font-family: var(--font);
+    cursor: pointer;
+    transition: all .18s;
+    white-space: nowrap;
+    letter-spacing: .01em;
+  }
+  .topbar-icon-btn:hover {
+    background: var(--surface3);
+    color: var(--text);
+    border-color: rgba(59,130,246,.35);
+  }
+  .topbar-icon-btn.active-edit {
+    background: rgba(245,158,11,.12);
+    border-color: rgba(245,158,11,.4);
+    color: #f59e0b;
+  }
+  .topbar-icon-btn .btn-icon { font-size: 14px; line-height: 1; }
+
+  /* ── EDIT MODE: inline editable cells ── */
+  body.edit-mode [data-editable] {
+    outline: 1.5px dashed rgba(245,158,11,.55);
+    border-radius: 4px;
+    cursor: text;
+    transition: outline-color .15s, background .15s;
+  }
+  body.edit-mode [data-editable]:hover {
+    outline-color: #f59e0b;
+    background: rgba(245,158,11,.07);
+  }
+  body.edit-mode [data-editable]:focus {
+    outline: 2px solid #f59e0b;
+    background: rgba(245,158,11,.1);
+  }
+  .edit-mode-banner {
+    display: none;
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #f59e0b;
+    color: #0f172a;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 9px 22px;
+    border-radius: 99px;
+    z-index: 999;
+    box-shadow: 0 4px 20px rgba(245,158,11,.45);
+    letter-spacing: .03em;
+    pointer-events: none;
+  }
+  body.edit-mode .edit-mode-banner { display: block; }
+
+  /* ── MODAL OVERLAY ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.6);
+    z-index: 500;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 32px;
+    width: 420px;
+    max-width: 90vw;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  .modal-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: var(--text);
+  }
+  .modal-close {
+    float: right;
+    background: none;
+    border: none;
+    color: var(--text3);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+  }
+  .modal-close:hover { color: var(--text); }
+</style>
+</head>
+<body class="light-mode">
+
+<!-- ════════════════════════════════════════ EDIT MODE BANNER ════════════════════════════════════════ -->
+<div class="edit-mode-banner">✏️ 편집 모드 ON — 텍스트·숫자를 클릭해서 직접 수정하세요</div>
+
+<!-- ════════════════════════════════════════ SIDEBAR ════════════════════════════════════════ -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="brand">SK Broadband</div>
+    <div class="title">O/I Dashboard</div>
+  </div>
+  <nav class="sidebar-nav">
+    <!-- ── Overview ── -->
+    <div class="nav-section">
+      <div class="nav-section-label">Overview</div>
+      <a class="nav-item active" onclick="showPage('dashboard', this)" id="nav-dashboard">
+        <span class="dot"></span>전사 대시보드
+      </a>
+    </div>
+
+    <!-- ── O/I 1.0 ── -->
+    <div class="nav-section">
+      <div class="nav-section-label">O/I 1.0</div>
+      <!-- 상위 메뉴 토글 -->
+      <div class="nav-item nav-parent" onclick="toggleTree('tree-oi1')" id="navp-oi1">
+        <span class="dot"></span>O/I 1.0
+        <span class="tree-arrow" id="arr-oi1">›</span>
+      </div>
+      <div class="nav-subtree" id="tree-oi1">
+        <a class="nav-item nav-sub" onclick="showPage('org', this)">
+          <span class="sub-dot"></span>조직별 현황
+          <span class="badge">8</span>
+        </a>
+        <a class="nav-item nav-sub" onclick="showPage('tasks', this)">
+          <span class="sub-dot"></span>과제별 현황
+          <span class="badge">29</span>
+        </a>
+        <div class="nav-sub-divider"></div>
+        <a class="nav-item nav-sub" onclick="showOrgDetail('유선', this)">
+          <span class="sub-dot"></span>유선 사업본부
+        </a>
+        <a class="nav-item nav-sub" onclick="showOrgDetail('미디어', this)">
+          <span class="sub-dot"></span>미디어 사업본부
+        </a>
+        <a class="nav-item nav-sub" onclick="showOrgDetail('Enterprise', this)">
+          <span class="sub-dot"></span>Enterprise 사업본부
+        </a>
+        <a class="nav-item nav-sub" onclick="showOrgDetail('Infra', this)">
+          <span class="sub-dot"></span>Network 센터
+        </a>
+        <a class="nav-item nav-sub" onclick="showOrgDetail('Corp', this)">
+          <span class="sub-dot"></span>Staff (Corp./직속)
+        </a>
+        <a class="nav-item nav-sub" onclick="showOrgDetail('HR', this)">
+          <span class="sub-dot"></span>기업문화
+        </a>
+        <a class="nav-item nav-sub" onclick="showOrgDetail('H&S', this)">
+          <span class="sub-dot"></span>홈앤서비스
+        </a>
+      </div>
+    </div>
+
+    <!-- ── O/I 일상화 ── -->
+    <div class="nav-section">
+      <div class="nav-section-label">O/I 일상화</div>
+      <div class="nav-item nav-parent" onclick="toggleTree('tree-oi2')" id="navp-oi2">
+        <span class="dot"></span>O/I 일상화
+        <span class="tree-arrow" id="arr-oi2">›</span>
+      </div>
+      <div class="nav-subtree" id="tree-oi2">
+        <a class="nav-item nav-sub" onclick="showPage('oi2', this)">
+          <span class="sub-dot"></span>일상화 과제 현황
+        </a>
+        <div class="nav-sub-divider"></div>
+        <a class="nav-item nav-sub" onclick="showOi2Org('유선', this)">
+          <span class="sub-dot" style="background:#5b8dd9;opacity:1"></span>유선 사업본부
+        </a>
+        <a class="nav-item nav-sub" onclick="showOi2Org('미디어', this)">
+          <span class="sub-dot" style="background:#7b9fd4;opacity:1"></span>미디어 사업본부
+        </a>
+        <a class="nav-item nav-sub" onclick="showOi2Org('미디어Tech', this)">
+          <span class="sub-dot" style="background:#6366f1;opacity:1"></span>미디어Tech 본부
+        </a>
+        <a class="nav-item nav-sub" onclick="showOi2Org('Enterprise', this)">
+          <span class="sub-dot" style="background:#2e9fba;opacity:1"></span>Enterprise 사업본부
+        </a>
+        <a class="nav-item nav-sub" onclick="showOi2Org('DC', this)">
+          <span class="sub-dot" style="background:#7c9e7a;opacity:1"></span>DC 본부
+        </a>
+        <a class="nav-item nav-sub" onclick="showOi2Org('Infra', this)">
+          <span class="sub-dot" style="background:#3aaa7e;opacity:1"></span>Network 센터
+        </a>
+        <a class="nav-item nav-sub" onclick="showOi2Org('Corp', this)">
+          <span class="sub-dot" style="background:#c9892a;opacity:1"></span>Staff (Corp./직속)
+        </a>
+        <a class="nav-item nav-sub" onclick="showOi2Org('HR', this)">
+          <span class="sub-dot" style="background:#8b72d4;opacity:1"></span>기업문화
+        </a>
+        <a class="nav-item nav-sub" onclick="showOi2Org('H&S', this)">
+          <span class="sub-dot" style="background:#c96c30;opacity:1"></span>홈앤서비스
+        </a>
+      </div>
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    기준: <strong data-editable contenteditable="false">'25년 12월 마감</strong><br>
+    3개년 Target: <strong data-editable contenteditable="false">2,660억</strong>
+  </div>
+</aside>
+
+<!-- ════════════════════════════════════════ MAIN ════════════════════════════════════════ -->
+<main class="main">
+  <div class="topbar">
+    <div class="topbar-breadcrumb">
+      <span>O/I Progress</span>
+      <span>›</span>
+      <span class="current" id="breadcrumb-text">전사 대시보드</span>
+    </div>
+    <div class="topbar-right">
+      <span class="period-tag" data-editable contenteditable="false">24'–26' 3개년 계획</span>
+      <span class="as-of" data-editable contenteditable="false">As of Dec. 2025</span>
+      <button class="topbar-icon-btn" id="themeToggleBtn" onclick="toggleTheme()" title="라이트/다크 모드 전환">
+        <span class="btn-icon" id="themeIcon">🌙</span>
+        <span id="themeLabel">다크 모드</span>
+      </button>
+      <button class="topbar-icon-btn" id="editToggleBtn" onclick="toggleEditMode()" title="텍스트·숫자 직접 편집">
+        <span class="btn-icon">✏️</span>
+        <span id="editLabel">편집 모드</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ────────── PAGE: DASHBOARD ────────── -->
+  <div class="page active" id="page-dashboard">
+    <div class="version-tabs">
+      <div class="version-tab active" onclick="switchVersion(1, this)">O/I 1.0</div>
+      <div class="version-tab" onclick="switchVersion(2, this)">O/I 일상화</div>
+    </div>
+
+    <div id="oi10-content">
+      <!-- Critical Alert Banner -->
+      <div id="criticalBanner" class="alert-banner" onclick="showPage('tasks');setTimeout(()=>{applyFilter('critical')},100)" style="display:none">
+        <div class="alert-banner-icon">⚠</div>
+        <div class="alert-banner-text">
+          <div class="alert-banner-title" id="criticalBannerTitle">진도율 미달 과제 2건</div>
+          <div class="alert-banner-sub" id="criticalBannerSub"></div>
+        </div>
+        <div class="alert-banner-arrow">→ 바로가기</div>
+      </div>
+
+      <div class="page-header">
+        <h1 data-editable contenteditable="false">전사 O/I Progress</h1>
+        <p data-editable contenteditable="false">Operation Improvement — FCF 개선 목표 달성 현황 (29개 과제, '24~'26 3개년)</p>
+      </div>
+
+      <!-- KPI Cards -->
+      <div class="kpi-grid">
+        <div class="kpi-card" style="--kpi-color:#06b6d4">
+          <div class="kpi-label" data-editable contenteditable="false">총 과제 수</div>
+          <div class="kpi-value" data-editable contenteditable="false">29<span style="font-size:16px;margin-left:4px">개</span></div>
+          <div class="kpi-sub"></div>
+        </div>
+        <div class="kpi-card" style="--kpi-color:#10b981">
+          <div class="kpi-label" data-editable contenteditable="false">'26년 진도율</div>
+          <div class="kpi-value" data-editable contenteditable="false">19.3<span style="font-size:16px">%</span></div>
+          <div class="kpi-sub" style="color:var(--text3);font-size:11px">누적실적 123억 / 연간계획 637억</div>
+        </div>
+        <div class="kpi-card" style="--kpi-color:#f59e0b">
+          <div class="kpi-label" data-editable contenteditable="false">3개년 Target</div>
+          <div class="kpi-value" data-editable contenteditable="false">2,660<span style="font-size:16px;margin-left:2px">억</span></div>
+          <div class="kpi-sub"></div>
+        </div>
+        <div class="kpi-card" style="--kpi-color:#3b82f6">
+          <div class="kpi-label" data-editable contenteditable="false">3개년 이행금액</div>
+          <div class="kpi-value" data-editable contenteditable="false">1,081<span style="font-size:16px;margin-left:2px">억</span></div>
+          <div class="kpi-sub">이행율 <span style="font-weight:700;color:#3b82f6">40.6%</span><span style="color:var(--text3);margin-left:4px;font-size:11px">/ 3개년 Target 대비</span></div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <!-- Donut Chart -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">전사 진도율</div>
+            <div class="card-tag">'26년 3월 누적기준</div>
+          </div>
+
+          <!-- 상단: 도넛 + 26년 누적 계획/실적 -->
+          <div class="donut-wrap">
+            <div class="donut-canvas-wrap">
+              <canvas id="donutMain" width="160" height="160"></canvas>
+              <div class="donut-center">
+                <div class="pct">112%</div>
+                <div class="lbl">진도율</div>
+              </div>
+            </div>
+            <div class="donut-legend">
+              <div class="legend-item">
+                <div class="legend-left">
+                  <div class="legend-dot" style="background:#94a3b8;border-radius:2px"></div>
+                  <div class="legend-name">계획</div>
+                </div>
+                <div class="legend-val" style="color:#94a3b8">250억</div>
+              </div>
+              <div class="legend-item">
+                <div class="legend-left">
+                  <div class="legend-dot" style="background:#f59e0b"></div>
+                  <div class="legend-name">실적</div>
+                </div>
+                <div class="legend-val" style="color:#f59e0b">280억</div>
+              </div>
+              <div class="divider" style="margin:14px 0"></div>
+              <div style="margin-bottom:10px">
+                <div style="font-size:11px;color:var(--text3);margin-bottom:8px;font-weight:600;text-transform:uppercase;letter-spacing:.05em">과제 Status</div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap">
+                  <span class="status-badge on-track">ON-TRACK</span>
+                  <span class="status-badge at-risk">AT-RISK</span>
+                  <span class="status-badge critical">CRITICAL</span>
+                </div>
+              </div>
+              <div style="font-size:11px;color:var(--text3);line-height:1.6">
+                ※ 월 누적 Target 대비 달성률 기준<br>
+                90%+ ON-TRACK · 70~90% AT-RISK · 70% 미만 CRITICAL
+              </div>
+            </div>
+          </div>
+
+          <!-- 하단: 24년/25년 실적 + 26년 계획 (소형) -->
+          <div style="display:flex;align-items:center;gap:12px;margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
+            <div style="display:flex;align-items:center;gap:5px">
+              <div style="width:6px;height:6px;border-radius:50%;background:#10b981;flex-shrink:0"></div>
+              <span style="font-size:10px;color:var(--text3)">'24년 실적</span>
+              <span style="font-size:11px;font-weight:700;color:#10b981;margin-left:2px">580억</span>
+            </div>
+            <div style="width:1px;height:10px;background:var(--border)"></div>
+            <div style="display:flex;align-items:center;gap:5px">
+              <div style="width:6px;height:6px;border-radius:50%;background:#3b82f6;flex-shrink:0"></div>
+              <span style="font-size:10px;color:var(--text3)">'25년 실적</span>
+              <span style="font-size:11px;font-weight:700;color:#3b82f6;margin-left:2px">1,081억</span>
+            </div>
+            <div style="width:1px;height:10px;background:var(--border)"></div>
+            <div style="display:flex;align-items:center;gap:5px">
+              <div style="width:6px;height:6px;border-radius:50%;background:#94a3b8;flex-shrink:0"></div>
+              <span style="font-size:10px;color:var(--text3)">'26년 계획</span>
+              <span style="font-size:11px;font-weight:700;color:#94a3b8;margin-left:2px">1,579억</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Monthly Bar (연도 필터) -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">월별 계획 vs 실적</div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <button onclick="switchMonthlyYear(2024,this)" class="year-tab-btn" id="ytab2024">'24년</button>
+              <button onclick="switchMonthlyYear(2025,this)" class="year-tab-btn" id="ytab2025">'25년</button>
+              <button onclick="switchMonthlyYear(2026,this)" class="year-tab-btn active" id="ytab2026">'26년</button>
+              <span id="monthlyYearTag" style="display:none"></span>
+            </div>
+          </div>
+          <div class="bar-chart" id="monthlyBar"></div>
+          <div class="bar-axis-labels">
+            <span>1월</span><span>2월</span><span>3월</span><span>4월</span>
+            <span>5월</span><span>6월</span><span>7월</span><span>8월</span>
+            <span>9월</span><span>10월</span><span>11월</span><span>12월</span>
+          </div>
+          <div class="forecast-legend" style="margin-top:12px">
+            <div class="forecast-legend-item">
+              <div class="forecast-dot" style="background:rgba(100,116,139,.35)"></div>계획
+            </div>
+            <div class="forecast-legend-item">
+              <div class="forecast-dot" style="background:linear-gradient(180deg,#3b82f6,#1d4ed8)"></div>실적
+            </div>
+            <div style="margin-left:auto;font-size:11px;color:var(--text3)" id="monthlyYearNote"></div>
+          </div>
+
+          <!-- 연도별 연간 계획/실적 표 -->
+          <div id="annualBarChart" style="border-top:1px solid var(--border);margin-top:18px;padding-top:14px">
+            <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px">연도별 연간 계획 / 실적</div>
+            <table style="width:100%;border-collapse:collapse;font-size:12px">
+              <thead>
+                <tr style="background:var(--surface2)">
+                  <th style="padding:7px 12px;text-align:left;font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.05em;text-transform:uppercase;border-bottom:1px solid var(--border);border-radius:6px 0 0 0">연도</th>
+                  <th style="padding:7px 12px;text-align:right;font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.05em;text-transform:uppercase;border-bottom:1px solid var(--border)">계획</th>
+                  <th style="padding:7px 12px;text-align:right;font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.05em;text-transform:uppercase;border-bottom:1px solid var(--border)">실적</th>
+                  <th style="padding:7px 12px;text-align:right;font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.05em;text-transform:uppercase;border-bottom:1px solid var(--border);border-radius:0 6px 0 0">달성률</th>
+                </tr>
+              </thead>
+              <tbody id="annualTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Org Summary -->
+      <div class="card" style="margin-bottom:20px">
+        <div class="card-header">
+          <div class="card-title">조직별 이행 현황</div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <button class="export-btn" onclick="exportCSV()">↓ CSV</button>
+            <button class="export-btn" onclick="openChangelog()" style="background:rgba(59,130,246,.1);border-color:rgba(59,130,246,.25);color:var(--accent)">📋 변경이력</button>
+            <div class="card-tag">클릭하면 상세 조회</div>
+          </div>
+        </div>
+        <div class="org-grid" style="grid-template-columns:repeat(4,1fr);gap:12px">
+          <div class="org-card" onclick="showOrgDetail('유선')" style="--bar-color:#5b8dd9">
+            <div class="org-name">유선 사업본부</div>
+            <div class="org-stats">
+              <div>
+                <div class="org-stat-label">달성률</div>
+                <div class="org-stat-val" style="color:#5b8dd9">119.8%</div>
+              </div>
+              <div>
+                <div class="org-stat-label">3개년 이행</div>
+                <div class="org-stat-val" style="color:var(--text2);font-size:15px">75%</div>
+              </div>
+            </div>
+            <div class="org-progress-bar">
+              <div class="org-progress-fill" style="width:100%;background:#5b8dd9"></div>
+            </div>
+          </div>
+          <div class="org-card" onclick="showOrgDetail('미디어')" style="--bar-color:#7b9fd4">
+            <div class="org-name">미디어 사업본부</div>
+            <div class="org-stats">
+              <div>
+                <div class="org-stat-label">달성률</div>
+                <div class="org-stat-val" style="color:#7b9fd4">141.2%</div>
+              </div>
+              <div>
+                <div class="org-stat-label">3개년 이행</div>
+                <div class="org-stat-val" style="color:var(--text2);font-size:15px">82%</div>
+              </div>
+            </div>
+            <div class="org-progress-bar">
+              <div class="org-progress-fill" style="width:100%;background:#7b9fd4"></div>
+            </div>
+          </div>
+          <div class="org-card" onclick="showOrgDetail('Enterprise')" style="--bar-color:#2e9fba">
+            <div class="org-name">Enterprise 사업본부</div>
+            <div class="org-stats">
+              <div>
+                <div class="org-stat-label">달성률</div>
+                <div class="org-stat-val" style="color:#2e9fba">121.4%</div>
+              </div>
+              <div>
+                <div class="org-stat-label">3개년 이행</div>
+                <div class="org-stat-val" style="color:var(--text2);font-size:15px">110%</div>
+              </div>
+            </div>
+            <div class="org-progress-bar">
+              <div class="org-progress-fill" style="width:100%;background:#2e9fba"></div>
+            </div>
+          </div>
+          <div class="org-card" onclick="showOrgDetail('Infra')" style="--bar-color:#3aaa7e">
+            <div class="org-name">Network 센터 (Infra)</div>
+            <div class="org-stats">
+              <div>
+                <div class="org-stat-label">달성률</div>
+                <div class="org-stat-val" style="color:#3aaa7e">105.6%</div>
+              </div>
+              <div>
+                <div class="org-stat-label">3개년 이행</div>
+                <div class="org-stat-val" style="color:var(--text2);font-size:15px">94%</div>
+              </div>
+            </div>
+            <div class="org-progress-bar">
+              <div class="org-progress-fill" style="width:100%;background:#3aaa7e"></div>
+            </div>
+          </div>
+          <div class="org-card" onclick="showOrgDetail('Corp')" style="--bar-color:#c9892a">
+            <div class="org-name">Staff (Corp./직속)</div>
+            <div class="org-stats">
+              <div>
+                <div class="org-stat-label">달성률</div>
+                <div class="org-stat-val" style="color:#c9892a">83.5%</div>
+              </div>
+              <div>
+                <div class="org-stat-label">3개년 이행</div>
+                <div class="org-stat-val" style="color:var(--text2);font-size:15px">76%</div>
+              </div>
+            </div>
+            <div class="org-progress-bar">
+              <div class="org-progress-fill" style="width:83.5%;background:#c9892a"></div>
+            </div>
+          </div>
+          <div class="org-card" onclick="showOrgDetail('HR')" style="--bar-color:#8b72d4">
+            <div class="org-name">기업문화</div>
+            <div class="org-stats">
+              <div>
+                <div class="org-stat-label">달성률</div>
+                <div class="org-stat-val" style="color:#8b72d4">137.9%</div>
+              </div>
+              <div>
+                <div class="org-stat-label">3개년 이행</div>
+                <div class="org-stat-val" style="color:var(--text2);font-size:15px">93%</div>
+              </div>
+            </div>
+            <div class="org-progress-bar">
+              <div class="org-progress-fill" style="width:100%;background:#8b72d4"></div>
+            </div>
+          </div>
+          <div class="org-card" onclick="showOrgDetail('H&S')" style="--bar-color:#c96c30">
+            <div class="org-name">홈앤서비스 (H&S)</div>
+            <div class="org-stats">
+              <div>
+                <div class="org-stat-label">달성률</div>
+                <div class="org-stat-val" style="color:#c96c30">85.2%</div>
+              </div>
+              <div>
+                <div class="org-stat-label">3개년 이행</div>
+                <div class="org-stat-val" style="color:var(--text2);font-size:15px">71%</div>
+              </div>
+            </div>
+            <div class="org-progress-bar">
+              <div class="org-progress-fill" style="width:85.2%;background:#c96c30"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="oi20-content" style="display:none;padding:0 32px 32px">
+      <div class="page-header">
+        <h1>O/I 일상화 현황 요약</h1>
+        <p>조직별 일상화 과제 수립 현황 · 과제 유형별 분포</p>
+      </div>
+      <!-- KPI 요약 -->
+      <div style="display:grid;grid-template-columns:1fr;margin-bottom:20px" id="dashOi2KpiGrid"></div>
+      <!-- 조직별 요약 카드 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">조직별 과제 현황</div>
+        </div>
+        <div id="dashOi2Summary"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ────────── PAGE: ORG ────────── -->
+  <div class="page" id="page-org">
+    <div class="page-header">
+      <h1>조직별 O/I 현황</h1>
+      <p>조직을 클릭하면 과제별 상세 내용을 조회할 수 있습니다</p>
+    </div>
+    <div class="kpi-grid" id="orgPageKpiGrid" style="margin-bottom:24px"></div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">조직별 '25년 달성률</div>
+          <div class="card-tag">목표比</div>
+        </div>
+        <div id="orgDonutsGrid" class="ring-wrap-2col"></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">3개년 이행률</div>
+          <div class="card-tag">'24~'26</div>
+        </div>
+        <div id="org3yGrid" class="ring-wrap-2col"></div>
+      </div>
+    </div>
+    <!-- 조직 간 달성률 비교 가로 막대 -->
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-header">
+        <div class="card-title">조직 간 달성률 비교</div>
+        <div class="card-tag">'25년 달성률</div>
+      </div>
+      <div class="compare-bar-wrap" id="compareBar25"></div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">조직별 상세 테이블</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="export-btn" onclick="exportOrgCSV()">↓ CSV</button>
+          <div class="card-tag">클릭 → 과제 상세</div>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>조직</th>
+              <th>과제 수</th>
+              <th class="num">'25년 Target</th>
+              <th class="num">'25년 실적</th>
+              <th>달성률</th>
+              <th class="num">3개년 이행률</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="orgTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ────────── PAGE: TASKS ────────── -->
+  <div class="page" id="page-tasks">
+    <div class="page-header">
+      <h1>과제별 O/I 현황</h1>
+      <p>29개 확정 과제의 실적 및 진도 현황 (과제 클릭 시 상세 조회)</p>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">전체 과제 목록</div>
+        <div class="export-btn-group">
+          <button class="export-btn" onclick="exportTasksCSV()">↓ CSV 내보내기</button>
+        </div>
+      </div>
+      <div class="filter-bar">
+        <input class="filter-input" id="taskSearch" type="text" placeholder="🔍  과제명 검색..." oninput="filterTasks()">
+        <select class="filter-select" id="filterOrg" onchange="filterTasks()">
+          <option value="">전체 조직</option>
+        </select>
+        <select class="filter-select" id="filterCat" onchange="filterTasks()">
+          <option value="">전체 분류</option>
+        </select>
+        <select class="filter-select" id="filterStatus" onchange="filterTasks()">
+          <option value="">전체 Status</option>
+          <option value="on-track">ON-TRACK</option>
+          <option value="at-risk">AT-RISK</option>
+          <option value="critical">CRITICAL</option>
+        </select>
+        <span class="filter-count" id="filterCount"></span>
+        <button class="filter-reset" onclick="resetFilters()">초기화</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>No.</th>
+              <th>과제명</th>
+              <th>조직</th>
+              <th>담당자</th>
+              <th>분류</th>
+              <th class="num">'26년 계획</th>
+              <th>진도율</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="taskTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ────────── PAGE: ORG DETAIL ────────── -->
+  <div class="page" id="page-org-detail">
+    <div class="detail-header">
+      <button class="back-btn" onclick="showPage('org')">← 조직별 현황</button>
+      <h1 id="orgDetailTitle" style="font-size:22px;font-weight:700"></h1>
+    </div>
+    <div class="kpi-grid" id="orgDetailKpi"></div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title" id="orgDetailDonutTitle">진도율</div>
+          <div class="card-tag">'25년 기준</div>
+        </div>
+        <div class="donut-wrap">
+          <div class="donut-canvas-wrap">
+            <canvas id="orgDetailDonut" width="140" height="140"></canvas>
+            <div class="donut-center">
+              <div class="pct" id="orgDetailPct">—</div>
+              <div class="lbl">진도율</div>
+            </div>
+          </div>
+          <div class="donut-legend" id="orgDetailLegend"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">3개년 진도</div>
+          <div class="card-tag">'24 ~ '26</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px;padding-top:8px" id="orgDetail3y"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">소속 과제 목록</div>
+        <div class="card-tag">클릭 → 과제 상세</div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>No.</th>
+              <th>과제명</th>
+              <th>분류</th>
+              <th class="num">'26년 계획</th>
+              <th>진도율</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="orgDetailTaskTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ────────── PAGE: TASK DETAIL ────────── -->
+  <div class="page" id="page-task-detail">
+    <div class="detail-header">
+      <button class="back-btn" id="taskDetailBackBtn" onclick="showPage('tasks')">← 과제 목록</button>
+      <div>
+        <div style="font-size:11px;color:var(--text3);font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px" id="taskDetailOrg"></div>
+        <h1 id="taskDetailTitle" style="font-size:22px;font-weight:700"></h1>
+      </div>
+    </div>
+    <div class="kpi-grid" id="taskDetailKpi"></div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">과제 진도율</div>
+          <div class="card-tag">'25년 누적</div>
+        </div>
+        <div class="donut-wrap">
+          <div class="donut-canvas-wrap">
+            <canvas id="taskDetailDonut" width="140" height="140"></canvas>
+            <div class="donut-center">
+              <div class="pct" id="taskDetailPct">—</div>
+              <div class="lbl">진도율</div>
+            </div>
+          </div>
+          <div class="donut-legend" id="taskDetailLegend"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Action Item</div>
+          <div class="card-tag">핵심 추진 과제</div>
+        </div>
+        <div id="taskDetailActions" style="padding-top:4px"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">'25년 월별 실적 (억원)</div>
+        <div class="card-tag" id="taskMonthlyTotal"></div>
+      </div>
+      <div class="mini-bar-chart" id="taskMonthlyBar"></div>
+      <div class="bar-axis-labels" style="margin-top:8px">
+        <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span>
+        <span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span>
+      </div>
+    </div>
+
+    <!-- ── 월별 특이사항 ── -->
+    <div class="card" id="taskRemarksCard">
+      <div class="card-header">
+        <div class="card-title">월별 특이사항</div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="card-tag" id="remarksEditStatus">읽기 전용</span>
+          <button class="remarks-edit-btn" id="remarksEditBtn" onclick="toggleRemarksEdit()">✏️ 편집</button>
+          <button class="remarks-edit-btn remarks-save-btn" id="remarksSaveBtn" onclick="saveRemarks()" style="display:none">💾 저장</button>
+        </div>
+      </div>
+      <div class="remarks-grid" id="remarksGrid"></div>
+    </div>
+
+  </div>
+
+  <!-- ────────── PAGE: O/I 일상화 ────────── -->
+  <div class="page" id="page-oi2">
+    <div class="page-header" style="margin-bottom:20px">
+      <h1>O/I 일상화 과제 현황</h1>
+      <p>조직별 일상화 과제의 선정배경 · 실행방안 · 기대효과를 관리합니다</p>
+    </div>
+
+    <!-- KPI 요약 -->
+    <div id="oi2KpiGrid" style="margin-bottom:20px"></div>
+
+    <!-- 전사 summary 패널 (전체 너비) -->
+    <div id="oi2FullSummaryPanel">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title" id="oi2SummaryTitle">조직별 일상화 과제 현황</div>
+          <div class="card-tag" id="oi2SummaryTag"></div>
+        </div>
+        <div id="oi2SummaryTable"></div>
+      </div>
+    </div>
+
+    <!-- 조직별 트리 패널 (조직 클릭 시 노출) -->
+    <div id="oi2OrgTreePanel" style="display:none">
+      <div class="oi2-tree-panel" style="position:static;max-width:480px;max-height:none">
+        <div class="oi2-tree-header">
+          <span id="oi2OrgTreeTitle">조직 / 과제</span>
+          <span id="oi2TreeCount" class="card-tag" style="font-size:10px"></span>
+        </div>
+        <div class="oi2-tree-body" id="oi2TreeBody" style="max-height:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ────────── PAGE: O/I 일상화 과제 상세 ────────── -->
+  <div class="page" id="page-oi2-detail">
+    <div class="detail-header">
+      <button class="back-btn" id="oi2DetailBackBtn" onclick="backToOi2()">← 일상화 과제 현황</button>
+      <div>
+        <div style="font-size:11px;color:var(--text3);font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px" id="oi2DOrg"></div>
+        <h1 id="oi2DTitle" style="font-size:22px;font-weight:700"></h1>
+      </div>
+    </div>
+
+    <!-- KPI 카드 -->
+    <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)" id="oi2DKpi"></div>
+
+    <div class="grid-2" style="margin-top:20px">
+      <!-- 카테고리 도넛 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">과제 유형</div>
+          <div class="card-tag" id="oi2DStatusTag"></div>
+        </div>
+        <div class="donut-wrap">
+          <div class="donut-canvas-wrap">
+            <canvas id="oi2DDonut" width="140" height="140"></canvas>
+            <div class="donut-center">
+              <div class="pct" id="oi2DDonutLabel" style="font-size:16px;font-weight:700;line-height:1.2"></div>
+              <div class="lbl">유형</div>
+            </div>
+          </div>
+          <div class="donut-legend" id="oi2DLegend"></div>
+        </div>
+      </div>
+
+      <!-- 실행방안 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">실행방안</div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span class="card-tag" id="oi2DActionEditStatus">읽기 전용</span>
+            <button class="remarks-edit-btn" id="oi2DActionEditBtn" onclick="toggleOi2DEdit('action')">✏️ 편집</button>
+            <button class="remarks-edit-btn remarks-save-btn" id="oi2DActionSaveBtn" onclick="saveOi2DField('action')" style="display:none">💾 저장</button>
+          </div>
+        </div>
+        <div id="oi2DActionView" class="oi2-view-text" style="min-height:80px"></div>
+        <textarea id="oi2DActionEdit" class="oi2-textarea" rows="5" placeholder="실행방안을 입력하세요..." style="display:none"></textarea>
+      </div>
+    </div>
+
+    <!-- 선정배경 + 기대효과 -->
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">선정배경</div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span class="card-tag" id="oi2DBgEditStatus">읽기 전용</span>
+            <button class="remarks-edit-btn" id="oi2DBgEditBtn" onclick="toggleOi2DEdit('background')">✏️ 편집</button>
+            <button class="remarks-edit-btn remarks-save-btn" id="oi2DBgSaveBtn" onclick="saveOi2DField('background')" style="display:none">💾 저장</button>
+          </div>
+        </div>
+        <div id="oi2DBgView" class="oi2-view-text" style="min-height:80px"></div>
+        <textarea id="oi2DBgEdit" class="oi2-textarea" rows="5" placeholder="선정배경을 입력하세요..." style="display:none"></textarea>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">기대효과</div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span class="card-tag" id="oi2DEffEditStatus">읽기 전용</span>
+            <button class="remarks-edit-btn" id="oi2DEffEditBtn" onclick="toggleOi2DEdit('effect')">✏️ 편집</button>
+            <button class="remarks-edit-btn remarks-save-btn" id="oi2DEffSaveBtn" onclick="saveOi2DField('effect')" style="display:none">💾 저장</button>
+          </div>
+        </div>
+        <div id="oi2DEffView" class="oi2-view-text" style="min-height:40px"></div>
+        <textarea id="oi2DEffEdit" class="oi2-textarea" rows="3" placeholder="기대효과를 입력하세요..." style="display:none"></textarea>
+        <div style="margin-top:16px">
+          <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.05em;text-transform:uppercase;margin-bottom:10px">3개년 Target</div>
+          <div class="oi2-effect-targets">
+            <div class="oi2-target-col">
+              <div class="oi2-target-year">'26년</div>
+              <div class="oi2-target-val" id="oi2DY26View"></div>
+              <input class="oi2-input oi2-target-input" id="oi2DY26Edit" placeholder="—" style="display:none">
+            </div>
+            <div class="oi2-target-col">
+              <div class="oi2-target-year">'27년</div>
+              <div class="oi2-target-val" id="oi2DY27View"></div>
+              <input class="oi2-input oi2-target-input" id="oi2DY27Edit" placeholder="—" style="display:none">
+            </div>
+            <div class="oi2-target-col">
+              <div class="oi2-target-year">'28년</div>
+              <div class="oi2-target-val" id="oi2DY28View"></div>
+              <input class="oi2-input oi2-target-input" id="oi2DY28Edit" placeholder="—" style="display:none">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 월별 특이사항 -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">월별 특이사항</div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="card-tag" id="oi2DRemarksStatus">읽기 전용</span>
+          <button class="remarks-edit-btn" id="oi2DRemarksEditBtn" onclick="toggleOi2DRemarks()">✏️ 편집</button>
+          <button class="remarks-edit-btn remarks-save-btn" id="oi2DRemarksSaveBtn" onclick="saveOi2DRemarks()" style="display:none">💾 저장</button>
+        </div>
+      </div>
+      <div class="remarks-grid" id="oi2DRemarksGrid"></div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ════════════ CHANGELOG MODAL ════════════ -->
+<div class="modal-overlay" id="changelogModal" onclick="if(event.target===this)closeChangelog()">
+  <div class="modal-box">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div style="font-size:16px;font-weight:700;color:var(--text)">📋 데이터 변경 이력</div>
+      <button class="modal-close" onclick="closeChangelog()">×</button>
+    </div>
+    <div class="changelog-timeline" id="changelogContent"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════ DATA ═══════════════════════════════
+const TASKS = [
+  { no:1,  name:'투자지분 매각',           org:'Corp',      cat:'자산유동화', plan26:104.0,  rate:85,  status:'on-track', owner:'김재원 상무',  email:'jw.kim@skb.co.kr',  monthly:[8.1,6.5,7.2,8.8,7.6,8.0,7.5,8.9,8.2,9.0,10.2,10.0] },
+  { no:2,  name:'비업무부동산 매각',        org:'Corp',      cat:'자산유동화', plan26:38.0,   rate:72,  status:'at-risk',  owner:'이수진 팀장',  email:'sj.lee@skb.co.kr',   monthly:[2.2,1.8,2.0,3.1,2.5,2.3,2.1,2.8,2.4,2.6,3.0,2.6] },
+  { no:3,  name:'회원권 매각',             org:'HR',        cat:'자산유동화', plan26:0,      rate:60,  status:'at-risk',  owner:'박민호 팀장',  email:'mh.park@skb.co.kr',  monthly:[0,0,0,0,0,1.2,0.8,1.0,0.9,1.1,0.8,0.7] },
+  { no:4,  name:'전자청구 전환',             org:'HR',        cat:'자산유동화', plan26:20.0,   rate:50,  status:'critical', owner:'박민호 팀장',  email:'mh.park@skb.co.kr',  monthly:[0,0,0,0,0.8,1.2,0.6,1.1,0.9,0.8,0.7,0.6] },
+  { no:5,  name:'순금융비용 축소',          org:'Corp',      cat:'자산유동화', plan26:8.0,    rate:92,  status:'on-track', owner:'최영훈 팀장',  email:'yh.choi@skb.co.kr',  monthly:[0.5,0.5,0.5,0.6,0.5,0.6,0.6,0.7,0.6,0.7,0.8,0.8] },
+  { no:6,  name:'IT운영 통합',             org:'Infra',     cat:'IP/CA통합', plan26:29.3,   rate:95,  status:'on-track', owner:'정도현 상무',  email:'dh.jung@skb.co.kr',  monthly:[2.0,1.8,2.1,2.5,2.2,2.4,2.3,2.7,2.5,2.8,3.0,2.9] },
+  { no:8,  name:'물류센터 통합',           org:'Infra',     cat:'IP/CA통합', plan26:-0.2,   rate:98,  status:'on-track', owner:'강상욱 팀장',  email:'sw.kang@skb.co.kr',  monthly:[0,0,0,0,0,0,0,-0.2,0,0,0,0] },
+  { no:9,  name:'투자(CapEx) 효율화',      org:'Infra',     cat:'투자효율화', plan26:238.7,  rate:96,  status:'on-track', owner:'정도현 상무',  email:'dh.jung@skb.co.kr',  monthly:[18.2,14.5,15.8,20.1,17.6,18.9,19.2,22.4,21.0,23.5,24.1,23.4] },
+  { no:10, name:'온가족할인 할인율 축소',   org:'Corp',      cat:'수익성강화', plan26:37.9,   rate:78,  status:'critical', owner:'오세훈 팀장',  email:'sh.oh@skb.co.kr',    monthly:[2.5,2.2,2.4,2.8,2.5,2.7,2.6,3.1,2.9,3.2,3.5,3.1] },
+  { no:11, name:'콘텐츠 비용 절감',        org:'미디어',    cat:'수익성강화', plan26:8.0,    rate:93,  status:'on-track', owner:'임혜진 팀장',  email:'hj.lim@skb.co.kr',   monthly:[0.5,0.5,0.6,0.7,0.6,0.7,0.6,0.8,0.7,0.8,0.9,0.9] },
+  { no:12, name:'콜센터 효율화(O/B)',      org:'유선',      cat:'수익성강화', plan26:21.0,   rate:91,  status:'on-track', owner:'윤성민 팀장',  email:'sm.yoon@skb.co.kr',  monthly:[1.5,1.3,1.5,1.7,1.6,1.7,1.6,1.9,1.8,2.0,2.2,2.2] },
+  { no:13, name:'무선단말 역무 통합',      org:'유선',      cat:'Process',   plan26:1.5,    rate:85,  status:'at-risk',  owner:'임혜진 팀장',  email:'hj.lim@skb.co.kr',   monthly:[0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.2,0.2] },
+  { no:14, name:'온라인광고 PoC 통합',     org:'미디어',    cat:'Process',   plan26:9.8,    rate:90,  status:'on-track', owner:'조현우 팀장',  email:'hw.jo@skb.co.kr',    monthly:[0.7,0.6,0.7,0.8,0.7,0.8,0.8,0.9,0.9,1.0,1.0,0.9] },
+  { no:15, name:'외주용역 효율화',         org:'Corp',      cat:'Process',   plan26:19.0,   rate:97,  status:'on-track', owner:'김재원 상무',  email:'jw.kim@skb.co.kr',   monthly:[1.4,1.2,1.4,1.6,1.5,1.6,1.5,1.8,1.7,1.9,2.0,1.9] },
+  { no:16, name:'계약직/사무용역 효율화',  org:'HR',        cat:'Process',   plan26:19.8,   rate:94,  status:'on-track', owner:'남기태 팀장',  email:'kt.nam@skb.co.kr',   monthly:[1.5,1.3,1.5,1.7,1.6,1.7,1.6,1.9,1.8,2.0,2.1,2.0] },
+  { no:17, name:'타사 임차설비 절감',      org:'Enterprise',cat:'Process',   plan26:14.0,   rate:89,  status:'at-risk',  owner:'서지은 팀장',  email:'je.seo@skb.co.kr',   monthly:[1.0,0.9,1.0,1.2,1.1,1.2,1.1,1.3,1.2,1.4,1.5,1.4] },
+  { no:18, name:'사은품 배송관리 효율화',  org:'유선',      cat:'Process',   plan26:3.0,    rate:99,  status:'on-track', owner:'조현우 팀장',  email:'hw.jo@skb.co.kr',    monthly:[0.2,0.2,0.2,0.3,0.2,0.3,0.2,0.3,0.3,0.3,0.3,0.2] },
+  { no:20, name:'소매직판점 운영 최적화',  org:'유선',      cat:'Process',   plan26:17.0,   rate:82,  status:'at-risk',  owner:'윤성민 팀장',  email:'sm.yoon@skb.co.kr',  monthly:[1.2,1.0,1.2,1.4,1.3,1.4,1.3,1.5,1.4,1.6,1.7,1.6] },
+  { no:21, name:'Up-sell 조직 운영 효율화',org:'미디어',    cat:'Process',   plan26:4.5,    rate:78,  status:'at-risk',  owner:'임혜진 팀장',  email:'hj.lim@skb.co.kr',   monthly:[0.3,0.3,0.3,0.4,0.3,0.4,0.3,0.4,0.4,0.4,0.4,0.4] },
+  { no:22, name:'H&S 차량유지비 축소',    org:'H&S',       cat:'Process',   plan26:3.3,    rate:80,  status:'at-risk',  owner:'류동훈 팀장',  email:'dh.ryu@skb.co.kr',   monthly:[0.2,0.2,0.2,0.3,0.2,0.3,0.2,0.3,0.3,0.3,0.3,0.3] },
+  { no:23, name:'부가세 경정청구',         org:'Corp',      cat:'검소경영',  plan26:4.8,    rate:100, status:'on-track', owner:'최영훈 팀장',  email:'yh.choi@skb.co.kr',  monthly:[0,0,0,4.8,0,0,0,0,0,0,0,0] },
+  { no:24, name:'경영지원성 비용 효율화',  org:'Corp',      cat:'검소경영',  plan26:4.8,    rate:75,  status:'at-risk',  owner:'오세훈 팀장',  email:'sh.oh@skb.co.kr',    monthly:[0.3,0.3,0.3,0.4,0.3,0.4,0.3,0.4,0.4,0.4,0.5,0.5] },
+  { no:25, name:'조직운영성 비용 절감',    org:'Corp',      cat:'검소경영',  plan26:4.8,    rate:88,  status:'at-risk',  owner:'이수진 팀장',  email:'sj.lee@skb.co.kr',   monthly:[0.3,0.3,0.4,0.5,0.4,0.4,0.4,0.5,0.5,0.5,0.5,0.5] },
+  { no:26, name:'B2B 고객관리 비용 절감', org:'Enterprise', cat:'수익성강화', plan26:4.0,    rate:91,  status:'on-track', owner:'서지은 팀장',  email:'je.seo@skb.co.kr',   monthly:[0.3,0.2,0.3,0.4,0.3,0.3,0.3,0.4,0.4,0.4,0.4,0.4] },
+  { no:27, name:'사무공간 통합',          org:'HR',        cat:'검소경영',  plan26:1.5,    rate:96,  status:'on-track', owner:'남기태 팀장',  email:'kt.nam@skb.co.kr',   monthly:[0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.2,0.2,0.2] },
+  { no:28, name:'기업문화 인력 최적화',    org:'HR',        cat:'인력최적화',  plan26:19.8,   rate:94,  status:'on-track', owner:'남기태 팀장',  email:'kt.nam@skb.co.kr',   monthly:[1.5,1.3,1.5,1.7,1.6,1.7,1.6,1.9,1.8,2.0,2.1,2.0] },
+  { no:29, name:'H&S 인력 최적화',       org:'H&S',       cat:'인력최적화',  plan26:0,      rate:76,  status:'at-risk',  owner:'류동훈 팀장',  email:'dh.ryu@skb.co.kr',   monthly:[0,0,0,0,0,0,0,0,0,0,0,0] },
+];
+
+const ORGS = [
+  { id:'유선',       name:'유선 사업본부',          rate:119.8, threeyear:75,  target:130, actual:156, color:'#5b8dd9', tasks:[12,13,18,20] },
+  { id:'미디어',     name:'미디어 사업본부',         rate:141.2, threeyear:82,  target:100, actual:141, color:'#7b9fd4', tasks:[11,14,21] },
+  { id:'Enterprise', name:'Enterprise 사업본부',     rate:121.4, threeyear:110, target:45,  actual:55,  color:'#2e9fba', tasks:[17,26] },
+  { id:'Infra',      name:'Network 센터',            rate:105.6, threeyear:94,  target:180, actual:190, color:'#3aaa7e', tasks:[6,8,9] },
+  { id:'Corp',       name:'Staff (Corp./직속)',      rate:83.5,  threeyear:76,  target:160, actual:134, color:'#c9892a', tasks:[1,2,5,10,15,23,24,25] },
+  { id:'HR',         name:'기업문화',                rate:137.9, threeyear:93,  target:65,  actual:90,  color:'#8b72d4', tasks:[3,4,16,27,28] },
+  { id:'H&S',        name:'홈앤서비스',              rate:85.2,  threeyear:71,  target:75,  actual:64,  color:'#c96c30', tasks:[22,29] },
+];
+
+const MONTHLY_DATA = {
+  2024: {
+    actual: [85.2, 38.1, 32.4, 61.3, 45.8, 48.2, 55.1, 72.4, 80.3, 88.5, 130.4, 162.3],
+    plan:   [82.0, 35.0, 30.0, 58.0, 44.0, 46.0, 53.0, 70.0, 78.0, 85.0, 125.0, 158.0],
+  },
+  2025: {
+    actual: [121.05, 43.47, 39.06, 80.6, 61.1, 54.1, 65.5, 84.1, 96.6, 97.6, 160.2, 176.6],
+    plan:   [115.3,  36.3,  34.4,  63.1, 48.2, 51.2, 67.3, 82.2,104.1,102.8, 125.9, 288.6],
+  },
+  2026: {
+    actual: [95.2, 52.3, 48.7, null, null, null, null, null, null, null, null, null],
+    plan:   [110.0, 48.0, 45.0, 72.0, 55.0, 58.0, 75.0, 90.0, 108.0, 112.0, 138.0, 298.0],
+  },
+};
+// 기본 연도 (하위 호환)
+const MONTHLY = MONTHLY_DATA[2025];
+let selectedYear = 2026;
+
+const statusLabel = { 'on-track':'ON-TRACK', 'at-risk':'AT-RISK', 'critical':'CRITICAL' };
+const statusClass = { 'on-track':'on-track', 'at-risk':'at-risk', 'critical':'critical' };
+
+const CHANGELOG = [
+  { date:'2025-12-31', version:'v1.5', changes:['12월 마감 실적 반영 — 전사 96.6% 확정', 'H&S 달성률 85.2%로 소폭 상승', '과제 #23 부가세 경정청구 100% 조기달성'] },
+  { date:'2025-11-30', version:'v1.4', changes:['11월 실적 반영 — 누적 실적 904억 → 1,080억', 'Enterprise 사업본부 3개년 이행률 110% 초과달성', '과제 #9 CapEx 효율화 96% 달성 확인'] },
+  { date:'2025-10-31', version:'v1.3', changes:['10월 실적 반영', 'Staff(Corp./직속) AT-RISK 상태 지속 모니터링', '과제 #3, #4 회원권 매각 CRITICAL 유지'] },
+  { date:'2025-09-30', version:'v1.2', changes:['3분기 마감 실적 반영', '전사 누적 달성 808억 — 계획比 △12억', '조직별 상세 페이지 기능 추가'] },
+  { date:'2025-06-30', version:'v1.1', changes:['상반기 마감 실적 반영', '월별 실적 차트 추가', '6개 조직 현황 카드 UI 개편'] },
+];
+
+const OI2_ORGS = [
+  { id:'유선', name:'유선 사업본부', color:'#5b8dd9', items:[
+    { id:'il-01', type:'대표과제', cascadingOrg:['유선 사업본부','미디어 사업본부'], name:'IPTV 가입자 ARPU 개선', status:'재무지표', due:'25.09',
+      background:'', action:'', effect:{ kpi:'', y26:'', y27:'', y28:'' } },
+    { id:'il-02', type:'임원개인', name:'소매직판 채널 효율화', status:'Biz Index', due:'26.03',
+      background:'', action:'', effect:{ kpi:'', y26:'', y27:'', y28:'' } },
+  ]},
+  { id:'미디어', name:'미디어 사업본부', color:'#7b9fd4', items:[
+    { id:'il-03', type:'대표과제', cascadingOrg:['미디어 사업본부','Enterprise 사업본부','유선 사업본부'], name:'미디어 광고플랫폼 고도화', status:'Biz Index', due:'26.03',
+      background:'', action:'', effect:{ kpi:'', y26:'', y27:'', y28:'' } },
+    { id:'il-04', type:'임원개인', name:'B tv 서비스 경쟁력 강화', status:'재무지표', due:'26.06',
+      background:'', action:'', effect:{ kpi:'', y26:'', y27:'', y28:'' } },
+  ]},
+  { id:'미디어Tech', name:'미디어Tech 본부', color:'#6366f1', items:[
+    { id:'il-18', type:'대표과제', cascadingOrg:['미디어Tech 본부'], name:'미디어 플랫폼 기술 고도화', status:'재무지표', due:'26.06',
+      background:'', action:'', effect:{ kpi:'', y26:'', y27:'', y28:'' } },
+    { id:'il-19', type:'임원개인', name:'AI 기반 콘텐츠 추천 시스템', status:'Biz Index', due:'26.09',
+      background:'', action:'', effect:{ kpi:'', y26:'', y27:'', y28:'' } },
+  ]},
+  { id:'Enterprise', name:'Enterprise 사업본부', color:'#2e9fba', items:[
+    { id:'il-05', type:'대표과제', cascadingOrg:['Enterprise 사업본부','Network 센터'], name:'AI 기반 B2B 영업 자동화', status:'Biz Index', due:'26.03',
+      background:'', action:'', effect:{ kpi:'', y26:'', y27:'', y28:'' } },
+    { id:'il-06', type:'임원개인', name:'클라우드 매니지드 서비스 확대', status:'재무지표', due:'25.12',
+      background:'', action:'', effect:{ kpi:'', y26:'', y27:'', y28:'' } },
+  ]},
+  { id:'DC', name:'DC 본부', color:'#7c9e7a', items:[
+    { id:'il-16', type:'대표과제', cascadingOrg:['DC 본부','Network 센터'], name:'DC 운영 효율화', status:'재무지표', due:'26.06',
+      background:'', action:'', effect:{ kpi:'', y26:'', y27:'', y28:'' } },
+    { id:'il-17', type:'임원개인', name:'클라우드 전환 가속화', status:'Biz Index', due:'26.09',
+      background:'', action:'', effect:{ kpi:'', y26:'', y27:'', y28:'' } },
+  ]},
+  { id:'Infra', name:'Network 센터', color:'#3aaa7e', items:[
+    { id:'il-07', type:'대표과제', cascadingOrg:['Network 센터','DC 본부'], name:'AI 네트워크 운영 자동화', status:'Biz Index', due:'26.06',
+      background:'', action:'', effect:{ kpi:'', y26:'', y27:'', y28:'' } },
+    { id:'il-08', type:'임원개인', name:'에너지 효율화 (전력PUE 개선)', status:'재무지표', due:'26.09',
+      background:'', action:'', effect:{ kpi:'', y26:'', y27:'', y28:'' } },
+    { id:'il-09', type:'임원개인', name:'5G 고정무선 서비스 PoC', status:'Biz Index', due:'26.06',
+      background:'', action:'', effect:{ kpi:'', y26:'', y27:'', y28:'' } },
+  ]},
+  { id:'Corp', name:'Staff (Corp./직속)', color:'#c9892a', items:[
+    { id:'il-10', type:'대표과제', cascadingOrg:['Staff (Corp./직속)','기업문화'], name:'AI 기반 재무분석 자동화', status:'재무지표', due:'26.03',
+      background:'', action:'', effect:{ kpi:'', y26:'', y27:'', y28:'' } },
+    { id:'il-11', type:'임원개인', name:'사내 구매 플랫폼 통합', status:'Biz Index', due:'26.09',
+      background:'', action:'', effect:{ kpi:'', y26:'', y27:'', y28:'' } },
+  ]},
+  { id:'HR', name:'기업문화', color:'#8b72d4', items:[
+    { id:'il-12', type:'대표과제', cascadingOrg:['기업문화','홈앤서비스'], name:'AI HR 채용 어시스턴트', status:'재무지표', due:'25.11',
+      background:'', action:'', effect:{ kpi:'', y26:'', y27:'', y28:'' } },
+    { id:'il-13', type:'임원개인', name:'성과관리 플랫폼 개편', status:'Biz Index', due:'26.03',
+      background:'', action:'', effect:{ kpi:'', y26:'', y27:'', y28:'' } },
+  ]},
+  { id:'H&S', name:'홈앤서비스', color:'#c96c30', items:[
+    { id:'il-14', type:'대표과제', cascadingOrg:['홈앤서비스','유선 사업본부'], name:'현장 엔지니어 디지털 워크플레이스', status:'재무지표', due:'26.06',
+      background:'', action:'', effect:{ kpi:'', y26:'', y27:'', y28:'' } },
+    { id:'il-15', type:'임원개인', name:'스마트홈 서비스 번들링', status:'Biz Index', due:'26.09',
+      background:'', action:'', effect:{ kpi:'', y26:'', y27:'', y28:'' } },
+  ]},
+];
+
+
+// ── 과제 유형 뱃지 헬퍼 ──
+function typeBadge(type) {
+  if (type === '대표과제') return '<span class="task-type-badge rep">★ 대표</span>';
+  if (type === '임원개인') return '<span class="task-type-badge exec">◆ 임원</span>';
+  return '';
+}
+function cascadingTag(item) {
+  if (item.type === '대표과제' && item.cascadingOrg) {
+    const orgs = Array.isArray(item.cascadingOrg) ? item.cascadingOrg : [item.cascadingOrg];
+    return orgs.map(o => `<span class="cascading-org-tag">${o}</span>`).join(' ');
+  }
+  return '';
+}
+function cascadingSubNodes(item, orgColor) {
+  if (item.type !== '대표과제' || !item.cascadingOrg) return '';
+  const orgs = Array.isArray(item.cascadingOrg) ? item.cascadingOrg : [item.cascadingOrg];
+  return orgs.map(o => `
+    <div class="cascading-sub-node">
+      <div class="csn-dot" style="background:${orgColor}"></div>
+      <span>${o}</span>
+    </div>`).join('');
+}
+// ═══════════════════════════════ NAV ═══════════════════════════════
+function showPage(pageId, navEl) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + pageId).classList.add('active');
+  if (navEl) {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    navEl.classList.add('active');
+  }
+  const labels = { dashboard:'전사 대시보드', org:'조직별 현황', tasks:'과제별 현황', oi2:'O/I 일상화 현황' };
+  document.getElementById('breadcrumb-text').textContent = labels[pageId] || '';
+  if (pageId === 'org') buildOrgPage();
+  if (pageId === 'tasks') buildTasksPage();
+  if (pageId === 'oi2') buildOi2Page();
+}
+
+function switchVersion(v, el) {
+  document.querySelectorAll('.version-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('oi10-content').style.display = v === 1 ? '' : 'none';
+  const oi20 = document.getElementById('oi20-content');
+  oi20.style.display = v === 2 ? 'block' : 'none';
+  oi20.style.padding = v === 2 ? '0 32px 32px' : '';
+  if (v === 2) buildDashOi2();
+}
+
+// ═══════════════════════════════ CANVAS DONUT ═══════════════════════════════
+function drawDonut(canvas, pct, color, trackColor) {
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height, r = w * .40, cx = w/2, cy = h/2, lw = 9;
+  ctx.clearRect(0, 0, w, h);
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2);
+  ctx.strokeStyle = trackColor || 'rgba(0,0,0,0.07)'; ctx.lineWidth = lw; ctx.stroke();
+  const capped = Math.min(pct / 100, 1);
+  ctx.beginPath(); ctx.arc(cx, cy, r, -Math.PI/2, -Math.PI/2 + Math.PI*2*capped);
+  ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.lineCap = 'round'; ctx.stroke();
+}
+
+// ═══════════════════════════════ [01] CRITICAL ALERT BANNER ═══════════════════════════════
+function buildCriticalBanner() {
+  const banner = document.getElementById('criticalBanner');
+  banner.style.display = 'flex';
+  document.getElementById('criticalBannerTitle').textContent = '진도율 미달 과제 2건';
+  document.getElementById('criticalBannerSub').textContent = '온가족할인개편  ·  전자청구 전환';
+}
+
+// ═══════════════════════════════ [02b] ANNUAL TABLE ═══════════════════════════════
+function buildAnnualBar() {
+  const tbody = document.getElementById('annualTableBody');
+  if (!tbody) return;
+
+  const yearColors = { 2024:'#10b981', 2025:'#3b82f6', 2026:'#f59e0b' };
+  const yearLabels = { 2024:"'24년", 2025:"'25년", 2026:"'26년" };
+  const data = [2024, 2025, 2026].map(year => ({
+    year,
+    plan:   Math.round(MONTHLY_DATA[year].plan.reduce((s,v) => s+v, 0)),
+    actual: Math.round(MONTHLY_DATA[year].actual.filter(v => v !== null).reduce((s,v) => s+v, 0)),
+  }));
+
+  tbody.innerHTML = data.map((d, i) => {
+    const col     = yearColors[d.year];
+    const is26    = d.year === 2026;
+    const rate    = d.actual > 0 ? (d.actual / d.plan * 100).toFixed(1) : null;
+    const rateCol = rate >= 100 ? '#10b981' : rate >= 90 ? '#3b82f6' : rate >= 70 ? '#f59e0b' : '#ef4444';
+    const border  = i < data.length - 1 ? 'border-bottom:1px solid var(--border)' : '';
+    return `
+      <tr style="${border}">
+        <td style="padding:9px 12px;font-weight:700;color:${col}">${yearLabels[d.year]}</td>
+        <td style="padding:9px 12px;text-align:right;color:var(--text2);font-variant-numeric:tabular-nums">${d.plan.toLocaleString()}억</td>
+        <td style="padding:9px 12px;text-align:right;font-weight:600;color:${col};font-variant-numeric:tabular-nums">
+          ${d.actual > 0 ? d.actual.toLocaleString()+'억'+(is26?' <span style="font-size:9px;color:var(--text3)">▶ 3월까지</span>':'') : '<span style="color:var(--text3)">—</span>'}
+        </td>
+        <td style="padding:9px 12px;text-align:right">
+          ${rate !== null
+            ? `<span style="font-size:12px;font-weight:700;color:${rateCol}">${rate}%</span>`
+            : `<span style="color:var(--text3);font-size:11px">—</span>`}
+        </td>
+      </tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════ [03] MONTHLY BAR ═══════════════════════════════
+function switchMonthlyYear(year, btn) {
+  selectedYear = year;
+  // 탭 active 토글
+  [2024,2025,2026].forEach(y => {
+    const b = document.getElementById('ytab' + y);
+    if (b) b.classList.toggle('active', y === year);
+  });
+  const tag = document.getElementById('monthlyYearTag');
+  if (tag) tag.textContent = `'${String(year).slice(2)}년 (억원)`;
+  buildMonthlyBar();
+}
+
+function buildMonthlyBar() {
+  const year = selectedYear || 2026;
+  const data = MONTHLY_DATA[year] || MONTHLY_DATA[2026];
+  const container = document.getElementById('monthlyBar');
+  if (!container) return;
+
+  const allVals = [...data.actual.filter(v => v !== null), ...data.plan];
+  const maxVal = Math.max(...allVals) * 1.1;
+
+  const note = document.getElementById('monthlyYearNote');
+  if (note) {
+    note.textContent = year === 2026 ? '※ 실적: 3월까지 반영 (매월 업데이트)' : '';
+  }
+
+  container.innerHTML = '';
+  data.plan.forEach((p, i) => {
+    const grp = document.createElement('div');
+    grp.className = 'bar-group';
+    const a = data.actual[i];
+    const hasActual = a !== null && a !== undefined;
+    const aH = hasActual ? (a / maxVal * 100).toFixed(1) : '0';
+    const pH = (p / maxVal * 100).toFixed(1);
+    const actualStyle = hasActual
+      ? `height:0;background:linear-gradient(180deg,#3b82f6,#1d4ed8)`
+      : `height:0;background:transparent;pointer-events:none`;
+    grp.innerHTML = `
+      <div class="bar plan" style="height:0" data-h="${pH}%" title="${p}억 (계획)"></div>
+      <div class="bar actual" style="${actualStyle}" data-h="${aH}%" title="${hasActual ? a+'억 (실적)' : '미집계'}"></div>`;
+    container.appendChild(grp);
+  });
+
+  setTimeout(() => {
+    container.querySelectorAll('.bar').forEach(b => { b.style.height = b.dataset.h; });
+  }, 150);
+}
+
+// ═══════════════════════════════ [07] ORG COMPARE CHART ═══════════════════════════════
+function buildCompareCharts() {
+  const bar25 = document.getElementById('compareBar25');
+  if (!bar25) return;
+
+  const max25 = Math.max(...ORGS.map(o => o.rate));
+
+  bar25.innerHTML = ORGS.map(o => `
+    <div class="compare-row" onclick="showOrgDetail('${o.id}')">
+      <div class="compare-org-name">${o.name.replace(' 사업본부','').replace(' 센터','').trim()}</div>
+      <div class="compare-bar-outer">
+        <div class="compare-fill" style="width:0;background:${o.color}" data-w="${Math.min(o.rate/max25*100,100).toFixed(1)}%">
+          ${o.rate > 30 ? o.rate + '%' : ''}
+        </div>
+      </div>
+      <div class="compare-pct-label" style="color:${o.color}">${o.rate}%</div>
+    </div>`).join('');
+
+  setTimeout(() => {
+    document.querySelectorAll('.compare-fill').forEach(el => {
+      el.style.width = el.dataset.w;
+    });
+  }, 100);
+}
+
+// ── 우측 요약 패널 렌더 ──
+function renderOi2Summary(orgs) {
+  const sColor = { '재무지표':'#3b82f6', 'Biz Index':'#10b981' };
+  const sBg    = { '재무지표':'rgba(59,130,246,.13)', 'Biz Index':'rgba(16,185,129,.13)' };
+
+  const total  = orgs.reduce((s,o) => s + o.items.length, 0);
+  const done   = orgs.reduce((s,o) => s + o.items.filter(i=>i.status==='재무지표').length, 0);
+  const wip    = orgs.reduce((s,o) => s + o.items.filter(i=>i.status==='Biz Index').length, 0);
+  const rev    = 0;
+  const isFiltered = orgs.length < OI2_ORGS.length;
+
+  document.getElementById('oi2SummaryTitle').textContent =
+    isFiltered ? orgs[0].name + ' · 과제 현황' : '조직별 일상화 과제 현황';
+  document.getElementById('oi2SummaryTag').textContent = `총 ${total}건`;
+
+  const wrap = document.getElementById('oi2SummaryTable');
+  wrap.innerHTML = `
+
+    <!-- ── 상단 차트 영역 ── -->
+    <div style="display:grid;grid-template-columns:180px 1fr;gap:20px;margin-bottom:24px;align-items:start">
+
+      <!-- 상태 도넛 -->
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:18px;text-align:center">
+        <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px">상태 현황</div>
+        <div style="position:relative;display:inline-block">
+          <canvas id="oi2DonutCanvas" width="110" height="110"></canvas>
+          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none">
+            <div style="font-size:22px;font-weight:700;color:var(--text);line-height:1">${total}</div>
+            <div style="font-size:9px;color:var(--text3);font-weight:600;letter-spacing:.05em;text-transform:uppercase">전체</div>
+          </div>
+        </div>
+        <div style="margin-top:14px;display:flex;flex-direction:column;gap:6px">
+          ${[['재무지표',done],['Biz Index',wip]].map(([s,n])=>`
+            <div style="display:flex;align-items:center;gap:8px;font-size:11px">
+              <div style="width:8px;height:8px;border-radius:2px;background:${sColor[s]};flex-shrink:0"></div>
+              <span style="color:var(--text2);flex:1;text-align:left">${s}</span>
+              <span style="font-weight:700;color:${sColor[s]}">${n}</span>
+            </div>`).join('')}
+        </div>
+      </div>
+
+      <!-- 조직별 스택 바 차트 -->
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:18px">
+        <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:14px">조직별 과제 현황</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          ${orgs.map(org=>{
+            const od = org.items.filter(i=>i.status==='재무지표').length;
+            const ow = org.items.filter(i=>i.status==='Biz Index').length;
+            const or2= 0;
+            const tot= org.items.length;
+            const maxTot = Math.max(...orgs.map(o=>o.items.length), 1);
+            const barW = (tot/maxTot*100).toFixed(1);
+            return `
+            <div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;cursor:pointer"
+                onclick="showOi2Org('${org.id}',null)"
+                onmouseover="this.querySelector('span.org-link').style.color='var(--accent)'"
+                onmouseout="this.querySelector('span.org-link').style.color='var(--text2)'">
+                <div style="display:flex;align-items:center;gap:6px">
+                  <div style="width:3px;height:12px;border-radius:2px;background:${org.color};flex-shrink:0"></div>
+                  <span class="org-link" style="font-size:11.5px;font-weight:600;color:var(--text2);transition:color .15s">${org.name.replace(' 사업본부','').replace(' 센터','').replace(' 본부','')}</span>
+                </div>
+                <span style="font-size:11px;font-weight:700;color:var(--text3)">${tot}건</span>
+              </div>
+              <div style="height:10px;background:var(--surface3);border-radius:6px;overflow:hidden;width:${barW}%">
+                <div style="display:flex;height:100%;border-radius:6px;overflow:hidden">
+                  ${od>0?`<div style="flex:${od};background:#3b82f6;transition:flex 1s" title="재무지표 ${od}건"></div>`:''}
+                  ${ow>0?`<div style="flex:${ow};background:#10b981;transition:flex 1s" title="Biz Index ${ow}건"></div>`:''}
+                  
+                </div>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+        <!-- 범례 -->
+        <div style="display:flex;gap:14px;margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
+          ${[['재무지표','#3b82f6'],['Biz Index','#10b981']].map(([s,c])=>`
+            <div style="display:flex;align-items:center;gap:5px;font-size:10.5px;color:var(--text3)">
+              <div style="width:10px;height:10px;border-radius:3px;background:${c}"></div>${s}
+            </div>`).join('')}
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 하단 조직 카드 그리드 (조직별 필터 화면에서만 표시) ── -->
+    <div style="display:grid;grid-template-columns:repeat(${orgs.length===1?'1':orgs.length<=4?'2':'3'},1fr);gap:12px">
+      ${orgs.map(org=>{
+        const od = org.items.filter(i=>i.status==='재무지표').length;
+        const pct = org.items.length > 0 ? Math.round(od/org.items.length*100) : 0;
+        return `
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px;border-top:3px solid ${org.color}">
+          <!-- 카드 헤더 -->
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <span style="font-size:12px;font-weight:700;color:var(--text)">${org.name}</span>
+            <span style="font-size:10px;font-weight:700;color:${org.color};background:${org.color}18;padding:2px 8px;border-radius:5px">${org.items.length}건</span>
+          </div>
+          <!-- 재무지표 비율 프로그레스 -->
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+            <div style="flex:1;height:6px;background:var(--surface3);border-radius:99px;overflow:hidden">
+              <div style="height:100%;width:${pct}%;background:${org.color};border-radius:99px;transition:width 1s cubic-bezier(.16,1,.3,1)"></div>
+            </div>
+            <span style="font-size:11px;font-weight:700;color:${org.color};min-width:32px;text-align:right">${pct}%</span>
+          </div>
+          <!-- 과제 목록 -->
+          <div style="display:flex;flex-direction:column;gap:6px">
+            ${[...org.items].sort((a,b)=> a.type==='대표과제'&&b.type!=='대표과제'?-1:a.type!=='대표과제'&&b.type==='대표과제'?1:0).map(item=>`
+              <div onclick="selectOi2Item('${item.id}','${org.id}')"
+                style="display:flex;align-items:center;gap:7px;cursor:pointer;padding:5px 6px;border-radius:7px;transition:background .15s;margin:0 -6px"
+                onmouseover="this.style.background='var(--surface3)'" onmouseout="this.style.background='transparent'">
+                ${typeBadge(item.type)}
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:11px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${item.name}">${item.name}</div>
+                  ${item.type==='대표과제' && item.cascadingOrg ? `<div style="margin-top:2px">${cascadingTag(item)}</div>` : ''}
+                </div>
+                <span style="font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;background:${sBg[item.status]};color:${sColor[item.status]};flex-shrink:0">${item.status}</span>
+                <span style="font-size:10px;color:var(--text3);flex-shrink:0">›</span>
+              </div>`).join('')}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+
+  // 도넛 그리기 (멀티 세그먼트)
+  setTimeout(() => {
+    const canvas = document.getElementById('oi2DonutCanvas');
+    if (!canvas || total === 0) return;
+    const ctx = canvas.getContext('2d');
+    const cx = 55, cy = 55, r = 38, lw = 9;
+    ctx.clearRect(0, 0, 110, 110);
+    // track
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2);
+    ctx.strokeStyle = 'rgba(0,0,0,0.06)'; ctx.lineWidth = lw; ctx.stroke();
+    // segments
+    const segs = [['재무지표',done,'#3b82f6'],['Biz Index',wip,'#10b981']].filter(s=>s[1]>0);
+    let start = -Math.PI / 2;
+    segs.forEach(([,n,c]) => {
+      const sweep = (n / total) * Math.PI * 2;
+      ctx.beginPath(); ctx.arc(cx, cy, r, start, start + sweep);
+      ctx.strokeStyle = c; ctx.lineWidth = lw; ctx.lineCap = 'round'; ctx.stroke();
+      start += sweep;
+    });
+  }, 60);
+}
+
+// ── 전사 대시보드 O/I 일상화 탭 요약 빌드 ──
+function buildDashOi2() {
+  const allItems  = OI2_ORGS.reduce((s,o) => s + o.items.length, 0);
+  const done      = OI2_ORGS.reduce((s,o) => s + o.items.filter(i => i.status==='재무지표').length, 0);
+  const wip       = OI2_ORGS.reduce((s,o) => s + o.items.filter(i => i.status==='Biz Index').length, 0);
+  const rev       = 0;
+  const statusColor = { '재무지표':'#3b82f6','Biz Index':'#10b981' };
+  const statusBg    = { '재무지표':'rgba(59,130,246,.13)','Biz Index':'rgba(16,185,129,.13)' };
+
+  // KPI — 일상화 과제현황 화면과 동일 구성
+  const repAll  = OI2_ORGS.reduce((s,o) => s + o.items.filter(i => i.type==='대표과제').length, 0);
+  const execAll = OI2_ORGS.reduce((s,o) => s + o.items.filter(i => i.type==='임원개인').length, 0);
+
+  document.getElementById('dashOi2KpiGrid').innerHTML = `
+    <div style="grid-column:span 4;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+
+      <!-- 그룹 1: 카테고리별 현황 -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--card-radius);overflow:hidden">
+        <div style="padding:10px 18px 8px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px">
+          <div style="width:3px;height:14px;border-radius:2px;background:linear-gradient(180deg,#3b82f6,#06b6d4)"></div>
+          <span style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3)">카테고리별 현황</span>
+          <span style="margin-left:auto;font-size:10px;font-weight:600;color:var(--text3)">${OI2_ORGS.length}개 조직</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0">
+          <div style="padding:18px 20px;border-right:1px solid var(--border)">
+            <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:8px">전체 과제</div>
+            <div style="font-size:28px;font-weight:700;color:#06b6d4;letter-spacing:-.02em;line-height:1;margin-bottom:4px">${allItems}<span style="font-size:14px;margin-left:2px">건</span></div>
+            <div style="font-size:11px;color:var(--text2)">${OI2_ORGS.length}개 조직</div>
+          </div>
+          <div style="padding:18px 20px;border-right:1px solid var(--border);position:relative">
+            <div style="position:absolute;top:0;left:0;right:0;height:2px;background:#3b82f6;opacity:.7"></div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:8px">재무지표</div>
+            <div style="font-size:28px;font-weight:700;color:#3b82f6;letter-spacing:-.02em;line-height:1;margin-bottom:4px">${done}<span style="font-size:14px;margin-left:2px">건</span></div>
+            <div style="font-size:11px;color:var(--text2)">${allItems ? Math.round(done/allItems*100) : 0}%</div>
+          </div>
+          <div style="padding:18px 20px;position:relative">
+            <div style="position:absolute;top:0;left:0;right:0;height:2px;background:#10b981;opacity:.7"></div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Biz Index</div>
+            <div style="font-size:28px;font-weight:700;color:#10b981;letter-spacing:-.02em;line-height:1;margin-bottom:4px">${wip}<span style="font-size:14px;margin-left:2px">건</span></div>
+            <div style="font-size:11px;color:var(--text2)">${allItems ? Math.round(wip/allItems*100) : 0}%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 그룹 2: 과제 유형별 현황 -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--card-radius);overflow:hidden">
+        <div style="padding:10px 18px 8px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px">
+          <div style="width:3px;height:14px;border-radius:2px;background:linear-gradient(180deg,#a855f7,#f97316)"></div>
+          <span style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3)">과제 유형별 현황</span>
+          <span style="margin-left:auto;font-size:9px;font-weight:700;color:var(--text3);background:var(--surface3);padding:2px 8px;border-radius:4px;border:1px solid var(--border)">전사 기준</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
+          <div style="padding:18px 20px;border-right:1px solid var(--border);position:relative">
+            <div style="position:absolute;top:0;left:0;right:0;height:2px;background:#a855f7;opacity:.7"></div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:8px">조직별 대표과제</div>
+            <div style="font-size:28px;font-weight:700;color:#a855f7;letter-spacing:-.02em;line-height:1;margin-bottom:4px">${repAll}<span style="font-size:14px;margin-left:2px">건</span></div>
+            <div style="display:flex;align-items:center;gap:5px;margin-top:4px">
+              <span style="font-size:9px;font-weight:700;color:#a855f7;background:rgba(168,85,247,.12);border:1px solid rgba(168,85,247,.25);padding:1px 6px;border-radius:4px">★ 대표</span>
+              <span style="font-size:11px;color:var(--text2)">${allItems ? Math.round(repAll/allItems*100) : 0}%</span>
+            </div>
+          </div>
+          <div style="padding:18px 20px;position:relative">
+            <div style="position:absolute;top:0;left:0;right:0;height:2px;background:#f97316;opacity:.7"></div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:8px">임원별 과제</div>
+            <div style="font-size:28px;font-weight:700;color:#f97316;letter-spacing:-.02em;line-height:1;margin-bottom:4px">${execAll}<span style="font-size:14px;margin-left:2px">건</span></div>
+            <div style="display:flex;align-items:center;gap:5px;margin-top:4px">
+              <span style="font-size:9px;font-weight:700;color:#f97316;background:rgba(249,115,22,.12);border:1px solid rgba(249,115,22,.25);padding:1px 6px;border-radius:4px">◆ 임원</span>
+              <span style="font-size:11px;color:var(--text2)">${allItems ? Math.round(execAll/allItems*100) : 0}%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>`;
+
+  // 조직별 카드 그리드 (4열)
+  document.getElementById('dashOi2Summary').innerHTML = `
+    <div class="dash-oi2-grid">
+      ${OI2_ORGS.map(org => `
+        <div class="dash-oi2-card" onclick="showPage('oi2')">
+          <div class="dash-oi2-card-top">
+            <div class="dash-oi2-org-dot" style="background:${org.color}"></div>
+            <div class="dash-oi2-org-name">${org.name}</div>
+            <div class="dash-oi2-count">${org.items.length}건</div>
+          </div>
+          <div class="dash-oi2-items-list">
+            ${[...org.items].sort((a,b)=> a.type==='대표과제'&&b.type!=='대표과제'?-1:a.type!=='대표과제'&&b.type==='대표과제'?1:0).map(item => `
+              <div class="dash-oi2-item-row">
+                ${item.type==='대표과제'
+                  ? '<span style="font-size:9px;font-weight:700;color:#a855f7;background:rgba(168,85,247,.12);border:1px solid rgba(168,85,247,.25);padding:1px 5px;border-radius:4px;flex-shrink:0">대표</span>'
+                  : '<span style="font-size:9px;font-weight:700;color:#f97316;background:rgba(249,115,22,.12);border:1px solid rgba(249,115,22,.25);padding:1px 5px;border-radius:4px;flex-shrink:0">임원</span>'}
+                <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${item.name}</span>
+                <span class="dash-oi2-status" style="background:${statusBg[item.status]};color:${statusColor[item.status]}">${item.status}</span>
+              </div>`).join('')}
+          </div>
+        </div>`).join('')}
+    </div>`;
+}
+
+// ═══════════════════════════════ [08] O/I 일상화 TRACKER ═══════════════════════════════
+let currentOi2Item = null;
+let oi2EditMode = false;
+
+// 인메모리 저장소
+const oi2Store = {};
+
+function getOi2Data(itemId) {
+  if (!oi2Store[itemId]) {
+    // OI2_ORGS에서 기본값 로드
+    for (const org of OI2_ORGS) {
+      const item = org.items.find(i => i.id === itemId);
+      if (item) {
+        oi2Store[itemId] = {
+          background: item.background || '',
+          action: item.action || '',
+          effect: { ...item.effect }
+        };
+        break;
+      }
+    }
+  }
+  return oi2Store[itemId];
+}
+
+function buildOi2Page(orgFilter) {
+  // 필터 적용된 조직 목록 (카테고리 KPI는 visibleOrgs 기준, 유형 KPI는 전사 기준)
+  const visibleOrgs = orgFilter
+    ? OI2_ORGS.filter(o => o.id === orgFilter)
+    : OI2_ORGS;
+
+  const allItems  = visibleOrgs.reduce((s, o) => s + o.items.length, 0);
+  const doneItems = visibleOrgs.reduce((s, o) => s + o.items.filter(i => i.status === '재무지표').length, 0);
+  const wipItems  = visibleOrgs.reduce((s, o) => s + o.items.filter(i => i.status === 'Biz Index').length, 0);
+  const orgLabel  = orgFilter ? (visibleOrgs[0]?.name || '') : `${OI2_ORGS.length}개 조직`;
+
+  // 과제 유형별 집계 — orgFilter 시 해당 조직 기준, 전체 시 전사 기준
+  const typeBase   = orgFilter ? visibleOrgs : OI2_ORGS;
+  const totalAll   = typeBase.reduce((s, o) => s + o.items.length, 0);
+  const repItems   = typeBase.reduce((s, o) => s + o.items.filter(i => i.type === '대표과제').length, 0);
+  const execItems  = typeBase.reduce((s, o) => s + o.items.filter(i => i.type === '임원개인').length, 0);
+  const typeLabel  = orgFilter ? (visibleOrgs[0]?.name || '') : '전사 기준';
+
+  // KPI — 전체 페이지만 표시, 조직별 페이지는 숨김
+  const kpiGrid = document.getElementById('oi2KpiGrid');
+  if (orgFilter) {
+    kpiGrid.innerHTML = '';
+    kpiGrid.style.display = 'none';
+  } else {
+    kpiGrid.style.display = '';
+    kpiGrid.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+
+      <!-- 그룹 1: 전체 + 카테고리 (재무지표/Biz Index) -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--card-radius);overflow:hidden">
+        <div style="padding:10px 18px 8px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px">
+          <div style="width:3px;height:14px;border-radius:2px;background:linear-gradient(180deg,#3b82f6,#06b6d4)"></div>
+          <span style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3)">카테고리별 현황</span>
+          <span style="margin-left:auto;font-size:10px;font-weight:600;color:var(--text3)">${orgLabel}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0">
+          <div style="padding:18px 20px;border-right:1px solid var(--border)">
+            <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:8px">전체 과제</div>
+            <div style="font-size:28px;font-weight:700;color:#06b6d4;letter-spacing:-.02em;line-height:1;margin-bottom:4px">${allItems}<span style="font-size:14px;margin-left:2px">건</span></div>
+            <div style="font-size:11px;color:var(--text2)">${orgLabel}</div>
+          </div>
+          <div style="padding:18px 20px;border-right:1px solid var(--border);position:relative">
+            <div style="position:absolute;top:0;left:0;right:0;height:2px;background:#3b82f6;opacity:.7"></div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:8px">재무지표</div>
+            <div style="font-size:28px;font-weight:700;color:#3b82f6;letter-spacing:-.02em;line-height:1;margin-bottom:4px">${doneItems}<span style="font-size:14px;margin-left:2px">건</span></div>
+            <div style="font-size:11px;color:var(--text2)">${allItems ? Math.round(doneItems/allItems*100) : 0}%</div>
+          </div>
+          <div style="padding:18px 20px;position:relative">
+            <div style="position:absolute;top:0;left:0;right:0;height:2px;background:#10b981;opacity:.7"></div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Biz Index</div>
+            <div style="font-size:28px;font-weight:700;color:#10b981;letter-spacing:-.02em;line-height:1;margin-bottom:4px">${wipItems}<span style="font-size:14px;margin-left:2px">건</span></div>
+            <div style="font-size:11px;color:var(--text2)">${allItems ? Math.round(wipItems/allItems*100) : 0}%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 그룹 2: 과제 유형 (대표/임원) — 전사 기준 -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--card-radius);overflow:hidden">
+        <div style="padding:10px 18px 8px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px">
+          <div style="width:3px;height:14px;border-radius:2px;background:linear-gradient(180deg,#a855f7,#f97316)"></div>
+          <span style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3)">과제 유형별 현황</span>
+          <span style="margin-left:auto;font-size:9px;font-weight:700;color:var(--text3);background:var(--surface3);padding:2px 8px;border-radius:4px;border:1px solid var(--border)">${typeLabel}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
+          <div style="padding:18px 20px;border-right:1px solid var(--border);position:relative">
+            <div style="position:absolute;top:0;left:0;right:0;height:2px;background:#a855f7;opacity:.7"></div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:8px">조직별 대표과제</div>
+            <div style="font-size:28px;font-weight:700;color:#a855f7;letter-spacing:-.02em;line-height:1;margin-bottom:4px">${repItems}<span style="font-size:14px;margin-left:2px">건</span></div>
+            <div style="display:flex;align-items:center;gap:5px;margin-top:4px">
+              <span style="font-size:9px;font-weight:700;color:#a855f7;background:rgba(168,85,247,.12);border:1px solid rgba(168,85,247,.25);padding:1px 6px;border-radius:4px">★ 대표</span>
+              <span style="font-size:11px;color:var(--text2)">${totalAll ? Math.round(repItems/totalAll*100) : 0}%</span>
+            </div>
+          </div>
+          <div style="padding:18px 20px;position:relative">
+            <div style="position:absolute;top:0;left:0;right:0;height:2px;background:#f97316;opacity:.7"></div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:8px">임원별 과제</div>
+            <div style="font-size:28px;font-weight:700;color:#f97316;letter-spacing:-.02em;line-height:1;margin-bottom:4px">${execItems}<span style="font-size:14px;margin-left:2px">건</span></div>
+            <div style="display:flex;align-items:center;gap:5px;margin-top:4px">
+              <span style="font-size:9px;font-weight:700;color:#f97316;background:rgba(249,115,22,.12);border:1px solid rgba(249,115,22,.25);padding:1px 6px;border-radius:4px">◆ 임원</span>
+              <span style="font-size:11px;color:var(--text2)">${totalAll ? Math.round(execItems/totalAll*100) : 0}%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>`;
+  } // end else
+
+  const totalVisible = visibleOrgs.reduce((s, o) => s + o.items.length, 0);
+  const statusColor = { '재무지표':'#3b82f6', 'Biz Index':'#10b981' };
+  const statusBg    = { '재무지표':'rgba(59,130,246,.15)', 'Biz Index':'rgba(16,185,129,.15)' };
+
+  if (orgFilter) {
+    // ── 조직별 모드: 트리 패널만 표시 ──
+    document.getElementById('oi2FullSummaryPanel').style.display = 'none';
+    document.getElementById('oi2OrgTreePanel').style.display = '';
+    const org = visibleOrgs[0];
+    document.getElementById('oi2OrgTreeTitle').textContent = org ? org.name + ' · 과제 목록' : '과제 목록';
+    document.getElementById('oi2TreeCount').textContent = `${totalVisible}건`;
+
+    document.getElementById('oi2TreeBody').innerHTML = visibleOrgs.map((org, oi) => `
+      <div class="oi2-tree-org">
+        <div class="oi2-tree-org-header" style="cursor:default">
+          <div class="oi2-tree-org-bar" style="background:${org.color}"></div>
+          <span>${org.name}</span>
+          <span class="card-tag" style="font-size:9px;padding:1px 6px">${org.items.length}</span>
+        </div>
+        <div class="oi2-tree-items open" id="oi2tree-${oi}">
+          ${[...org.items].sort((a,b)=> a.type==='대표과제'&&b.type!=='대표과제'?-1:a.type!=='대표과제'&&b.type==='대표과제'?1:0).map(item => `
+            <div class="oi2-tree-item" id="treeitem-${item.id}" onclick="selectOi2Item('${item.id}','${org.id}')"
+              style="align-items:flex-start;padding:10px 16px 10px 28px;gap:0;flex-direction:column">
+              <!-- 뱃지 행 -->
+              <div style="display:flex;align-items:center;gap:5px;margin-bottom:5px">
+                ${typeBadge(item.type)}
+                <span class="oi2-item-status-dot" style="color:${statusColor[item.status]};background:${statusBg[item.status]}">${item.status}</span>
+              </div>
+              <!-- 과제명 -->
+              <div style="font-size:13px;font-weight:700;color:var(--text);line-height:1.4;word-break:keep-all">${item.name}</div>
+              <!-- cascading 조직 -->
+              ${item.type==='대표과제' && item.cascadingOrg ? `<div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px">${cascadingTag(item)}</div>` : ''}
+            </div>
+            ${cascadingSubNodes(item, org.color)}`).join('')}
+        </div>
+      </div>`).join('');
+
+  } else {
+    // ── 전체 모드: summary 패널만 표시 ──
+    document.getElementById('oi2FullSummaryPanel').style.display = '';
+    document.getElementById('oi2OrgTreePanel').style.display = 'none';
+    renderOi2Summary(visibleOrgs);
+  }
+}
+
+function toggleOi2Tree(treeId, arrId) {
+  const tree = document.getElementById(treeId);
+  const arr  = document.getElementById(arrId);
+  const open = tree.classList.toggle('open');
+  if (arr) arr.classList.toggle('open', open);
+}
+
+function selectOi2Item(itemId, orgId) {
+  // 데이터 찾기
+  const org  = OI2_ORGS.find(o => o.id === orgId);
+  const item = org?.items.find(i => i.id === itemId);
+  if (!item || !org) return;
+
+  currentOi2Item = { itemId, orgId };
+
+  // 상세 페이지로 이동
+  showOi2Detail(item, org);
+}
+
+function showOi2Detail(item, org) {
+  // 페이지 전환
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-oi2-detail').classList.add('active');
+  document.getElementById('breadcrumb-text').textContent = 'O/I 일상화 과제 상세';
+
+  // 헤더
+  document.getElementById('oi2DOrg').innerHTML = org.name + ' &nbsp;' + typeBadge(item.type);
+  document.getElementById('oi2DTitle').textContent = item.name;
+
+  const statusColor = { '재무지표':'#3b82f6', 'Biz Index':'#10b981' };
+  const col = statusColor[item.status] || '#3b82f6';
+
+  document.getElementById('oi2DStatusTag').textContent = item.status;
+  document.getElementById('oi2DStatusTag').style.color = col;
+
+  // KPI 카드
+  document.getElementById('oi2DKpi').innerHTML = `
+    <div class="kpi-card" style="--kpi-color:${col}">
+      <div class="kpi-label">과제 유형</div>
+      <div class="kpi-value" style="font-size:20px;color:${col}">${item.status}</div>
+      <div class="kpi-sub" style="display:flex;align-items:center;gap:6px;margin-top:4px">
+        ${typeBadge(item.type)}
+        ${cascadingTag(item)}
+      </div>
+    </div>
+    <div class="kpi-card" style="--kpi-color:${org.color}">
+      <div class="kpi-label">소속 조직</div>
+      <div class="kpi-value" style="font-size:18px;color:${org.color}">${org.name}</div>
+      <div class="kpi-sub">담당 본부</div>
+    </div>
+    <div class="kpi-card" style="--kpi-color:#a78bfa">
+      <div class="kpi-label">목표 완료일</div>
+      <div class="kpi-value" style="font-size:22px">20${item.due}</div>
+      <div class="kpi-sub">Due Date</div>
+    </div>
+    <div class="kpi-card" style="--kpi-color:#f59e0b">
+      <div class="kpi-label">과제 ID</div>
+      <div class="kpi-value" style="font-size:18px">${item.id}</div>
+      <div class="kpi-sub">일상화 과제 코드</div>
+    </div>`;
+
+  // 도넛 (카테고리 시각화)
+  document.getElementById('oi2DDonutLabel').textContent = item.status;
+  setTimeout(() => {
+    const canvas = document.getElementById('oi2DDonut');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const cx = 70, cy = 70, r = 52, lw = 12;
+    ctx.clearRect(0, 0, 140, 140);
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = lw; ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx, cy, r, -Math.PI / 2, Math.PI * 2 * 0.75 - Math.PI / 2);
+    ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.lineCap = 'round'; ctx.stroke();
+  }, 50);
+
+  document.getElementById('oi2DLegend').innerHTML = `
+    <div class="legend-item">
+      <div class="legend-left"><div class="legend-dot" style="background:${col}"></div><div class="legend-name">${item.status}</div></div>
+      <div class="legend-val" style="color:${col}">해당</div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-left"><div class="legend-dot" style="background:${org.color}"></div><div class="legend-name">${org.name}</div></div>
+      <div class="legend-val" style="color:${org.color}">소속</div>
+    </div>
+    <div class="legend-item" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
+      <div class="legend-left"><div class="legend-dot" style="background:#a78bfa"></div><div class="legend-name">Due Date</div></div>
+      <div class="legend-val" style="color:#a78bfa">20${item.due}</div>
+    </div>`;
+
+  // 저장된 데이터 로드 후 렌더
+  const data = getOi2Data(item.id);
+  renderOi2DFields(data, false);
+  renderOi2DRemarks(item.id, false);
+
+  // 편집 버튼 초기화
+  ['Action','Bg','Eff'].forEach(k => {
+    document.getElementById('oi2D' + k + 'EditBtn').style.display = '';
+    document.getElementById('oi2D' + k + 'SaveBtn').style.display = 'none';
+    document.getElementById('oi2D' + k + 'EditStatus').textContent = '읽기 전용';
+  });
+  document.getElementById('oi2DRemarksEditBtn').style.display = '';
+  document.getElementById('oi2DRemarksSaveBtn').style.display = 'none';
+  document.getElementById('oi2DRemarksStatus').textContent = '읽기 전용';
+}
+
+function backToOi2() {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-oi2').classList.add('active');
+  document.getElementById('breadcrumb-text').textContent = 'O/I 일상화 현황';
+  // 돌아온 맥락에 맞게 패널 복원
+  const orgPanel = document.getElementById('oi2OrgTreePanel');
+  const sumPanel = document.getElementById('oi2FullSummaryPanel');
+  if (orgPanel && orgPanel.style.display !== 'none') {
+    // 조직별 페이지에서 돌아온 경우 → 그대로 유지
+  } else {
+    sumPanel.style.display = '';
+  }
+}
+
+function renderOi2DFields(data, editMode) {
+  const fields = [
+    { view:'oi2DActionView', edit:'oi2DActionEdit', key:'action' },
+    { view:'oi2DBgView',     edit:'oi2DBgEdit',     key:'background' },
+    { view:'oi2DEffView',    edit:'oi2DEffEdit',     key:'effectDesc' },
+  ];
+  fields.forEach(f => {
+    const v = document.getElementById(f.view);
+    const e = document.getElementById(f.edit);
+    if (!v || !e) return;
+    const val = f.key === 'effectDesc' ? (data.effect?.desc || '') : (data[f.key] || '');
+    v.textContent = val;
+    v.style.display = editMode === f.key ? 'none' : '';
+    e.value = val;
+    e.style.display = editMode === f.key ? '' : 'none';
+  });
+  // 3개년 target
+  ['y26','y27','y28'].forEach((y, i) => {
+    const ids = ['oi2DY26','oi2DY27','oi2DY28'];
+    const suffix = ['View','View','View'];
+    const v = document.getElementById(ids[i] + 'View');
+    const e = document.getElementById('oi2DY' + (26+i) + 'Edit');
+    const val = data.effect?.[y] || '';
+    if (v) { v.textContent = val || '—'; v.style.display = editMode === 'effect' ? 'none' : ''; }
+    if (e) { e.value = val; e.style.display = editMode === 'effect' ? '' : 'none'; }
+  });
+}
+
+function toggleOi2DEdit(field) {
+  const btnMap  = { action:'oi2DActionEditBtn', background:'oi2DBgEditBtn', effect:'oi2DEffEditBtn' };
+  const saveMap = { action:'oi2DActionSaveBtn', background:'oi2DBgSaveBtn', effect:'oi2DEffSaveBtn' };
+  const statMap = { action:'oi2DActionEditStatus', background:'oi2DBgEditStatus', effect:'oi2DEffEditStatus' };
+  const editMap = { action:'oi2DActionEdit', background:'oi2DBgEdit', effect:'oi2DEffEdit' };
+
+  document.getElementById(btnMap[field]).style.display  = 'none';
+  document.getElementById(saveMap[field]).style.display = '';
+  document.getElementById(statMap[field]).textContent   = '편집 중';
+
+  const data = currentOi2Item ? getOi2Data(currentOi2Item.itemId) : {};
+  renderOi2DFields(data, field);
+  setTimeout(() => document.getElementById(editMap[field])?.focus(), 50);
+}
+
+function saveOi2DField(field) {
+  if (!currentOi2Item) return;
+  const data = getOi2Data(currentOi2Item.itemId);
+  if (field === 'action')     data.action = document.getElementById('oi2DActionEdit').value;
+  if (field === 'background') data.background = document.getElementById('oi2DBgEdit').value;
+  if (field === 'effect') {
+    data.effect = data.effect || {};
+    data.effect.desc = document.getElementById('oi2DEffEdit').value;
+    data.effect.y26  = document.getElementById('oi2DY26Edit').value;
+    data.effect.y27  = document.getElementById('oi2DY27Edit').value;
+    data.effect.y28  = document.getElementById('oi2DY28Edit').value;
+  }
+
+  const btnMap  = { action:'oi2DActionEditBtn', background:'oi2DBgEditBtn', effect:'oi2DEffEditBtn' };
+  const saveMap = { action:'oi2DActionSaveBtn', background:'oi2DBgSaveBtn', effect:'oi2DEffSaveBtn' };
+  const statMap = { action:'oi2DActionEditStatus', background:'oi2DBgEditStatus', effect:'oi2DEffEditStatus' };
+  document.getElementById(btnMap[field]).style.display  = '';
+  document.getElementById(saveMap[field]).style.display = 'none';
+  document.getElementById(statMap[field]).textContent   = '저장됨 ✓';
+  setTimeout(() => { const s = document.getElementById(statMap[field]); if(s) s.textContent='읽기 전용'; }, 2000);
+  renderOi2DFields(data, false);
+}
+
+// 월별 특이사항 (oi2 상세페이지용, remarksStore 공유)
+function renderOi2DRemarks(taskId, editMode) {
+  const grid = document.getElementById('oi2DRemarksGrid');
+  if (!grid) return;
+  const remarks = getRemarksKey(taskId);
+  grid.innerHTML = '';
+  MONTH_LABELS.forEach((label, i) => {
+    const hasRemark = remarks[i] && remarks[i].trim() !== '';
+    const cell = document.createElement('div');
+    cell.className = 'remarks-cell' + (editMode ? ' edit-active' : '');
+    cell.innerHTML = `
+      <div class="remarks-month-label">
+        <div class="month-dot${hasRemark ? ' has-remark' : ''}"></div>
+        ${label}
+      </div>
+      ${editMode
+        ? `<textarea class="remarks-textarea oi2d-remarks-ta" data-month="${i}" placeholder="특이사항을 입력하세요..." rows="3">${remarks[i]}</textarea>`
+        : `<div class="remarks-text-view${!hasRemark ? ' empty' : ''}">${hasRemark ? escapeHtml(remarks[i]) : '내용 없음'}</div>`
+      }`;
+    grid.appendChild(cell);
+  });
+}
+
+function toggleOi2DRemarks() {
+  document.getElementById('oi2DRemarksEditBtn').style.display  = 'none';
+  document.getElementById('oi2DRemarksSaveBtn').style.display  = '';
+  document.getElementById('oi2DRemarksStatus').textContent     = '편집 중';
+  if (currentOi2Item) renderOi2DRemarks(currentOi2Item.itemId, true);
+  setTimeout(() => document.querySelector('.oi2d-remarks-ta')?.focus(), 50);
+}
+
+function saveOi2DRemarks() {
+  if (!currentOi2Item) return;
+  const remarks = getRemarksKey(currentOi2Item.itemId);
+  document.querySelectorAll('.oi2d-remarks-ta').forEach(ta => {
+    remarks[parseInt(ta.dataset.month)] = ta.value;
+  });
+  document.getElementById('oi2DRemarksEditBtn').style.display  = '';
+  document.getElementById('oi2DRemarksSaveBtn').style.display  = 'none';
+  document.getElementById('oi2DRemarksStatus').textContent     = '저장됨 ✓';
+  setTimeout(() => { const s = document.getElementById('oi2DRemarksStatus'); if(s) s.textContent='읽기 전용'; }, 2000);
+  renderOi2DRemarks(currentOi2Item.itemId, false);
+}
+
+function renderOi2Detail(data, editMode) {
+  const fields = [
+    { view:'oi2BackgroundView', edit:'oi2BackgroundEdit', key:'background' },
+    { view:'oi2ActionView',     edit:'oi2ActionEdit',     key:'action' },
+    { view:'oi2EffectView',     edit:'oi2EffectEdit',     key:'effectDesc' },
+  ];
+  fields.forEach(f => {
+    const v = document.getElementById(f.view);
+    const e = document.getElementById(f.edit);
+    if (!v || !e) return;
+    const val = f.key === 'effectDesc' ? (data.effect?.desc || '') : (data[f.key] || '');
+    v.textContent = val;
+    v.style.display = editMode ? 'none' : '';
+    e.value = val;
+    e.style.display = editMode ? '' : 'none';
+  });
+
+  // KPI 지표명
+  const kpiV = document.getElementById('oi2EffectKpiView');
+  const kpiE = document.getElementById('oi2EffectKpiEdit');
+  kpiV.textContent = data.effect?.kpi || '';
+  kpiV.style.display = editMode ? 'none' : '';
+  kpiE.value = data.effect?.kpi || '';
+  kpiE.style.display = editMode ? '' : 'none';
+
+  // 3개년 target
+  ['y26','y27','y28'].forEach(y => {
+    const v = document.getElementById('oi2' + y.charAt(0).toUpperCase() + y.slice(1) + 'View');
+    const e = document.getElementById('oi2' + y.charAt(0).toUpperCase() + y.slice(1) + 'Edit');
+    if (!v || !e) return;
+    const val = data.effect?.[y] || '';
+    v.textContent = val;
+    v.style.display = editMode ? 'none' : '';
+    e.value = val;
+    e.style.display = editMode ? '' : 'none';
+  });
+}
+
+function toggleOi2Edit() {
+  oi2EditMode = true;
+  document.getElementById('oi2EditBtn').style.display = 'none';
+  document.getElementById('oi2SaveBtn').style.display = '';
+  if (!currentOi2Item) return;
+  const data = getOi2Data(currentOi2Item.itemId);
+  renderOi2Detail(data, true);
+  document.getElementById('oi2BackgroundEdit').focus();
+}
+
+function saveOi2Detail() {
+  if (!currentOi2Item) return;
+  const data = getOi2Data(currentOi2Item.itemId);
+  data.background        = document.getElementById('oi2BackgroundEdit').value;
+  data.action            = document.getElementById('oi2ActionEdit').value;
+  data.effect            = data.effect || {};
+  data.effect.desc       = document.getElementById('oi2EffectEdit').value;
+  data.effect.kpi        = document.getElementById('oi2EffectKpiEdit').value;
+  data.effect.y26        = document.getElementById('oi2Y26Edit').value;
+  data.effect.y27        = document.getElementById('oi2Y27Edit').value;
+  data.effect.y28        = document.getElementById('oi2Y28Edit').value;
+
+  oi2EditMode = false;
+  document.getElementById('oi2EditBtn').style.display = '';
+  document.getElementById('oi2SaveBtn').style.display = 'none';
+  renderOi2Detail(data, false);
+}
+
+// ═══════════════════════════════ [09] CHANGELOG MODAL ═══════════════════════════════
+function openChangelog() {
+  const content = document.getElementById('changelogContent');
+  content.innerHTML = CHANGELOG.map(c => `
+    <div class="cl-entry">
+      <div class="cl-date-wrap">
+        <div class="cl-version">${c.version}</div>
+        <div class="cl-date">${c.date}</div>
+      </div>
+      <div class="cl-dot"></div>
+      <div class="cl-changes">
+        ${c.changes.map(ch => `<div class="cl-change-item">${ch}</div>`).join('')}
+      </div>
+    </div>`).join('');
+  document.getElementById('changelogModal').classList.add('open');
+}
+function closeChangelog() {
+  document.getElementById('changelogModal').classList.remove('open');
+}
+
+// ═══════════════════════════════ [06] EXPORT CSV ═══════════════════════════════
+function downloadCSV(filename, rows) {
+  const bom = '\uFEFF';
+  const csv = bom + rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type:'text/csv;charset=utf-8;' }));
+  a.download = filename;
+  a.click();
+}
+
+function exportCSV() {
+  const rows = [['조직', '과제수', "'25 Target(억)", "'25 실적(억)", '달성률(%)', '3개년이행률(%)', 'Status']];
+  ORGS.forEach(o => {
+    const s = o.rate >= 90 ? 'ON-TRACK' : (o.rate >= 70 ? 'AT-RISK' : 'CRITICAL');
+    rows.push([o.name, o.tasks.length, o.target, o.actual, o.rate, o.threeyear, s]);
+  });
+  downloadCSV('OI_조직별현황.csv', rows);
+}
+
+function exportOrgCSV() { exportCSV(); }
+
+function exportTasksCSV() {
+  const rows = [['No', '과제명', '조직', '담당자', '분류', "'26년계획(억)", '달성률(%)', 'Status']];
+  TASKS.forEach(t => {
+    rows.push([t.no, t.name, t.org, t.owner, t.cat,
+      t.plan26 > 0 ? t.plan26 : '—', t.rate, statusLabel[t.status]]);
+  });
+  downloadCSV('OI_과제별현황.csv', rows);
+}
+
+// ═══════════════════════════════ [02] FILTER & SEARCH ═══════════════════════════════
+let currentFilter = { search:'', org:'', cat:'', status:'' };
+
+function initFilters() {
+  const orgs = [...new Set(TASKS.map(t => t.org))].sort();
+  const cats = [...new Set(TASKS.map(t => t.cat))].sort();
+  const orgSel = document.getElementById('filterOrg');
+  const catSel = document.getElementById('filterCat');
+  orgs.forEach(o => { const opt = document.createElement('option'); opt.value = o; opt.textContent = o; orgSel.appendChild(opt); });
+  cats.forEach(c => { const opt = document.createElement('option'); opt.value = c; opt.textContent = c; catSel.appendChild(opt); });
+}
+
+function applyFilter(statusVal) {
+  if (statusVal) {
+    document.getElementById('filterStatus').value = statusVal;
+    currentFilter.status = statusVal;
+  }
+  filterTasks();
+}
+
+function filterTasks() {
+  currentFilter.search = document.getElementById('taskSearch').value.toLowerCase();
+  currentFilter.org    = document.getElementById('filterOrg').value;
+  currentFilter.cat    = document.getElementById('filterCat').value;
+  currentFilter.status = document.getElementById('filterStatus').value;
+  renderTaskTable(getFilteredTasks());
+}
+
+function resetFilters() {
+  document.getElementById('taskSearch').value = '';
+  document.getElementById('filterOrg').value = '';
+  document.getElementById('filterCat').value = '';
+  document.getElementById('filterStatus').value = '';
+  currentFilter = { search:'', org:'', cat:'', status:'' };
+  renderTaskTable(TASKS);
+}
+
+function getFilteredTasks() {
+  return TASKS.filter(t => {
+    if (currentFilter.search && !t.name.toLowerCase().includes(currentFilter.search) && !t.owner.toLowerCase().includes(currentFilter.search)) return false;
+    if (currentFilter.org    && t.org    !== currentFilter.org)    return false;
+    if (currentFilter.cat    && t.cat    !== currentFilter.cat)    return false;
+    if (currentFilter.status && t.status !== currentFilter.status) return false;
+    return true;
+  });
+}
+
+function renderTaskTable(tasks) {
+  const tbody = document.getElementById('taskTableBody');
+  const initials = name => name.slice(0,1) + (name.split(' ')[1] ? name.split(' ')[1][0] : '');
+  document.getElementById('filterCount').textContent = `${tasks.length} / ${TASKS.length}개`;
+  if (tasks.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text3)">검색 결과가 없습니다</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = tasks.map(t => `
+    <tr onclick="showTaskDetail(${t.no})">
+      <td style="color:var(--text3)">${t.no}</td>
+      <td class="primary">${t.name}</td>
+      <td style="color:var(--text2)">${t.org}</td>
+      <td>
+        <div class="owner-tag">
+          <div class="owner-avatar">${initials(t.owner)}</div>
+          <span>${t.owner}</span>
+        </div>
+      </td>
+      <td><span class="status-badge" style="background:rgba(100,116,139,.1);color:var(--text3)">${t.cat}</span></td>
+      <td class="num">${t.plan26 > 0 ? t.plan26.toFixed(1)+'억' : '—'}</td>
+      <td>
+        <div class="progress-cell">
+          <div class="progress-bar">
+            <div class="progress-fill" style="width:${t.rate}%;background:${t.rate>=90?'#10b981':t.rate>=70?'#f59e0b':'#ef4444'}"></div>
+          </div>
+          <div class="progress-pct">${t.rate}%</div>
+        </div>
+      </td>
+      <td><span class="status-badge ${t.status}">${statusLabel[t.status]}</span></td>
+    </tr>`).join('');
+}
+
+// ═══════════════════════════════ ORG PAGE ═══════════════════════════════
+function buildOrgPage() {
+  // ── 상단 KPI 카드 (전사 대시보드와 동일 구성)
+  const kpiGrid = document.getElementById('orgPageKpiGrid');
+  if (kpiGrid) {
+    const totalTasks = TASKS.length;
+    const cumActual = 123;   // 3월 누적 실적 (억)
+    const annualPlan = 637;  // '26년 연간 계획 (억)
+    const progressRate = 19.3; // 진도율
+    const target3y = 2660;   // 3개년 Target (억)
+    const exec3y = 1081;     // 3개년 이행금액 (억)
+    const exec3yRate = 40.6; // 3개년 이행율
+    kpiGrid.innerHTML = `
+      <div class="kpi-card" style="--kpi-color:#06b6d4">
+        <div class="kpi-label">총 과제 수</div>
+        <div class="kpi-value">${totalTasks}<span style="font-size:16px;margin-left:4px">개</span></div>
+        <div class="kpi-sub"></div>
+      </div>
+      <div class="kpi-card" style="--kpi-color:#10b981">
+        <div class="kpi-label">'26년 진도율</div>
+        <div class="kpi-value">${progressRate}<span style="font-size:16px">%</span></div>
+        <div class="kpi-sub" style="color:var(--text3);font-size:11px">누적실적 ${cumActual}억 / 연간계획 ${annualPlan}억</div>
+      </div>
+      <div class="kpi-card" style="--kpi-color:#f59e0b">
+        <div class="kpi-label">3개년 Target</div>
+        <div class="kpi-value">${target3y.toLocaleString()}<span style="font-size:16px;margin-left:2px">억</span></div>
+        <div class="kpi-sub"></div>
+      </div>
+      <div class="kpi-card" style="--kpi-color:#3b82f6">
+        <div class="kpi-label">3개년 이행금액</div>
+        <div class="kpi-value">${exec3y.toLocaleString()}<span style="font-size:16px;margin-left:2px">억</span></div>
+        <div class="kpi-sub">이행율 <span style="font-weight:700;color:#3b82f6">${exec3yRate}%</span><span style="color:var(--text3);margin-left:4px;font-size:11px">/ 3개년 Target 대비</span></div>
+      </div>`;
+  }
+
+  const grid1 = document.getElementById('orgDonutsGrid');
+  const grid2 = document.getElementById('org3yGrid');
+  grid1.innerHTML = ''; grid2.innerHTML = '';
+
+  ORGS.forEach(o => {
+    const d1 = document.createElement('div'); d1.className = 'ring-item';
+    const id1 = 'orgring_' + o.id;
+    d1.innerHTML = `<canvas id="${id1}" width="80" height="80"></canvas>
+      <div class="ring-val" style="color:${o.color}">${o.rate}%</div>
+      <div class="ring-lbl">${o.name.replace(' 사업본부','').replace(' 센터','').trim()}</div>`;
+    grid1.appendChild(d1);
+    setTimeout(() => drawDonut(document.getElementById(id1), Math.min(o.rate,100), o.color), 50);
+
+    const d2 = document.createElement('div'); d2.className = 'ring-item';
+    const id2 = 'org3y_' + o.id;
+    d2.innerHTML = `<canvas id="${id2}" width="80" height="80"></canvas>
+      <div class="ring-val" style="color:${o.color}">${o.threeyear}%</div>
+      <div class="ring-lbl">${o.name.replace(' 사업본부','').replace(' 센터','').trim()}</div>`;
+    grid2.appendChild(d2);
+    setTimeout(() => drawDonut(document.getElementById(id2), Math.min(o.threeyear,100), o.color), 50);
+  });
+
+  buildCompareCharts();
+
+  const tbody = document.getElementById('orgTableBody');
+  tbody.innerHTML = '';
+  ORGS.forEach(o => {
+    const s = o.rate >= 90 ? 'on-track' : (o.rate >= 70 ? 'at-risk' : 'critical');
+    tbody.innerHTML += `
+      <tr onclick="showOrgDetail('${o.id}')">
+        <td class="primary">${o.name}</td>
+        <td>${o.tasks.length}개</td>
+        <td class="num">${o.target}억</td>
+        <td class="num">${o.actual}억</td>
+        <td>
+          <div class="progress-cell">
+            <div class="progress-bar"><div class="progress-fill" style="width:${Math.min(o.rate,100)}%;background:${o.color}"></div></div>
+            <div class="progress-pct" style="color:${o.color}">${o.rate}%</div>
+          </div>
+        </td>
+        <td class="num">${o.threeyear}%</td>
+        <td><span class="status-badge ${s}">${statusLabel[s]}</span></td>
+      </tr>`;
+  });
+}
+
+// ═══════════════════════════════ TASKS PAGE ═══════════════════════════════
+function buildTasksPage() {
+  document.getElementById('filterStatus').value = '';
+  document.getElementById('filterOrg').value = '';
+  document.getElementById('filterCat').value = '';
+  const searchEl = document.getElementById('taskSearch');
+  if (searchEl) searchEl.value = '';
+  currentFilter = { search:'', org:'', cat:'', status:'' };
+  renderTaskTable(TASKS);
+  document.getElementById('filterCount').textContent = `${TASKS.length} / ${TASKS.length}개`;
+}
+
+// ═══════════════════════════════ ORG DETAIL ═══════════════════════════════
+function showOrgDetail(orgId, navEl) {
+  const o = ORGS.find(x => x.id === orgId);
+  if (!o) return;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-org-detail').classList.add('active');
+  document.getElementById('breadcrumb-text').textContent = o.name;
+  document.getElementById('orgDetailTitle').textContent = o.name;
+
+  const kpiEl = document.getElementById('orgDetailKpi');
+  const s = o.rate >= 90 ? 'on-track' : (o.rate >= 70 ? 'at-risk' : 'critical');
+
+  // 조직별 '26년 계획/실적/진도율/3개년 데이터
+  const orgKpiData = {
+    '유선':       { plan26: 42.5,  cum3m: 8.6,  rate26: 20.2, target3y: 542, actual3y: 220, exec3yRate: 40.6 },
+    '미디어':     { plan26: 22.3,  cum3m: 4.5,  rate26: 20.2, target3y: 417, actual3y: 169, exec3yRate: 40.5 },
+    'Enterprise': { plan26: 18.0,  cum3m: 3.7,  rate26: 20.6, target3y: 187, actual3y:  76, exec3yRate: 40.6 },
+    'Infra':      { plan26: 268.0, cum3m: 54.4, rate26: 20.3, target3y: 751, actual3y: 305, exec3yRate: 40.6 },
+    'Corp':       { plan26: 221.3, cum3m: 42.3, rate26: 19.1, target3y: 668, actual3y: 271, exec3yRate: 40.6 },
+    'HR':         { plan26: 61.1,  cum3m: 8.9,  rate26: 14.6, target3y: 271, actual3y: 110, exec3yRate: 40.6 },
+    'H&S':        { plan26: 3.3,   cum3m: 0.6,  rate26: 18.2, target3y: 313, actual3y: 127, exec3yRate: 40.6 },
+  };
+  const kd = orgKpiData[o.id] || { plan26:0, cum3m:0, rate26:0, target3y:0, actual3y:0, exec3yRate:0 };
+
+  kpiEl.innerHTML = `
+    <div class="kpi-card" style="--kpi-color:#06b6d4">
+      <div class="kpi-label">총 과제 수</div>
+      <div class="kpi-value">${o.tasks.length}<span style="font-size:16px;margin-left:4px">개</span></div>
+      <div class="kpi-sub"></div>
+    </div>
+    <div class="kpi-card" style="--kpi-color:#10b981">
+      <div class="kpi-label">'26년 진도율</div>
+      <div class="kpi-value">${kd.rate26}<span style="font-size:16px">%</span></div>
+      <div class="kpi-sub" style="color:var(--text3);font-size:11px">누적실적 ${kd.cum3m}억 / 연간계획 ${kd.plan26}억</div>
+    </div>
+    <div class="kpi-card" style="--kpi-color:#f59e0b">
+      <div class="kpi-label">3개년 Target</div>
+      <div class="kpi-value">${kd.target3y.toLocaleString()}<span style="font-size:16px;margin-left:2px">억</span></div>
+      <div class="kpi-sub"></div>
+    </div>
+    <div class="kpi-card" style="--kpi-color:#3b82f6">
+      <div class="kpi-label">3개년 이행금액</div>
+      <div class="kpi-value">${kd.actual3y.toLocaleString()}<span style="font-size:16px;margin-left:2px">억</span></div>
+      <div class="kpi-sub">이행율 <span style="font-weight:700;color:#3b82f6">${kd.exec3yRate}%</span><span style="color:var(--text3);margin-left:4px;font-size:11px">/ 3개년 Target 대비</span></div>
+    </div>`;
+
+  document.getElementById('orgDetailPct').textContent = o.rate + '%';
+  const gap = Math.abs(o.actual - o.target);
+  document.getElementById('orgDetailLegend').innerHTML = `
+    <div class="legend-item">
+      <div class="legend-left"><div class="legend-dot" style="background:#334155"></div><div class="legend-name">계획</div></div>
+      <div class="legend-val">${o.target}억</div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-left"><div class="legend-dot" style="background:${o.color}"></div><div class="legend-name">실적</div></div>
+      <div class="legend-val" style="color:${o.color}">${o.actual}억</div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-left"><div class="legend-dot" style="background:${o.actual>=o.target?'#10b981':'#ef4444'}"></div><div class="legend-name">계획比</div></div>
+      <div class="legend-val" style="color:${o.actual>=o.target?'#10b981':'#ef4444'}">${o.actual>=o.target?'+':'-'}${gap}억</div>
+    </div>`;
+  setTimeout(() => drawDonut(document.getElementById('orgDetailDonut'), Math.min(o.rate,100), o.color), 50);
+
+  const el3y = document.getElementById('orgDetail3y');
+  const yrs = [
+    { label:"'24년", pct: Math.round(o.threeyear * 0.28) },
+    { label:"'25년", pct: Math.round(o.threeyear * 0.58) },
+    { label:"'26년 (목표)", pct: 100 },
+  ];
+  el3y.innerHTML = yrs.map(y => `
+    <div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+        <span style="font-size:12px;color:var(--text2)">${y.label}</span>
+        <span style="font-size:12px;font-weight:600;color:${o.color}">${y.pct}%</span>
+      </div>
+      <div class="progress-bar" style="height:8px">
+        <div class="progress-fill" style="width:${y.pct}%;background:${o.color}"></div>
+      </div>
+    </div>`).join('');
+
+  const tbdy = document.getElementById('orgDetailTaskTable');
+  const orgTasks = TASKS.filter(t => o.tasks.includes(t.no));
+  tbdy.innerHTML = orgTasks.map(t => `
+    <tr onclick="showTaskDetail(${t.no})">
+      <td style="color:var(--text3)">${t.no}</td>
+      <td class="primary">${t.name}</td>
+      <td><span class="status-badge" style="background:rgba(100,116,139,.1);color:var(--text3)">${t.cat}</span></td>
+      <td class="num">${t.plan26 > 0 ? t.plan26.toFixed(1)+'억' : '—'}</td>
+      <td>
+        <div class="progress-cell">
+          <div class="progress-bar">
+            <div class="progress-fill" style="width:${t.rate}%;background:${t.rate>=90?'#10b981':t.rate>=70?'#f59e0b':'#ef4444'}"></div>
+          </div>
+          <div class="progress-pct">${t.rate}%</div>
+        </div>
+      </td>
+      <td><span class="status-badge ${t.status}">${statusLabel[t.status]}</span></td>
+    </tr>`).join('');
+}
+
+// ═══════════════════════════════ [04] TASK DETAIL + MONTHLY CHART ═══════════════════════════════
+let lastTaskFromOrg = null;
+
+function showTaskDetail(taskNo) {
+  const t = TASKS.find(x => x.no === taskNo);
+  if (!t) return;
+  lastTaskFromOrg = t.org;
+
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-task-detail').classList.add('active');
+  document.getElementById('breadcrumb-text').textContent = t.name;
+  document.getElementById('taskDetailTitle').textContent = t.name;
+  document.getElementById('taskDetailOrg').textContent = t.org + '  ·  ' + t.cat + '  ·  ' + t.owner;
+  document.getElementById('taskDetailPct').textContent = t.rate + '%';
+
+  const col = t.rate >= 90 ? '#10b981' : (t.rate >= 70 ? '#f59e0b' : '#ef4444');
+  setTimeout(() => drawDonut(document.getElementById('taskDetailDonut'), t.rate, col), 50);
+
+  const initials = name => name.slice(0,1) + (name.split(' ')[1] ? name.split(' ')[1][0] : '');
+  document.getElementById('taskDetailKpi').innerHTML = `
+    <div class="kpi-card" style="--kpi-color:${col}">
+      <div class="kpi-label">달성률</div>
+      <div class="kpi-value">${t.rate}<span style="font-size:16px">%</span></div>
+      <div class="kpi-sub"><span class="status-badge ${t.status}">${statusLabel[t.status]}</span></div>
+    </div>
+    <div class="kpi-card" style="--kpi-color:#3b82f6">
+      <div class="kpi-label">'26년 계획</div>
+      <div class="kpi-value">${t.plan26 > 0 ? t.plan26.toFixed(1) : '—'}<span style="font-size:16px;margin-left:2px">${t.plan26>0?'억':''}</span></div>
+      <div class="kpi-sub">연간 절감 목표</div>
+    </div>
+    <div class="kpi-card" style="--kpi-color:#a78bfa">
+      <div class="kpi-label">담당자</div>
+      <div class="kpi-value" style="font-size:20px">
+        <div class="owner-tag" style="justify-content:center">
+          <div class="owner-avatar" style="width:28px;height:28px;font-size:11px">${initials(t.owner)}</div>
+          <span style="font-size:14px">${t.owner}</span>
+        </div>
+      </div>
+      <div class="kpi-sub" style="font-size:11px">${t.email}</div>
+    </div>
+    <div class="kpi-card" style="--kpi-color:#06b6d4">
+      <div class="kpi-label">소속 조직</div>
+      <div class="kpi-value" style="font-size:18px">${t.org}</div>
+      <div class="kpi-sub">${t.cat}</div>
+    </div>`;
+
+  document.getElementById('taskDetailLegend').innerHTML = `
+    <div class="legend-item">
+      <div class="legend-left"><div class="legend-dot" style="background:${col}"></div><div class="legend-name">진행</div></div>
+      <div class="legend-val" style="color:${col}">${t.rate}%</div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-left"><div class="legend-dot" style="background:#334155"></div><div class="legend-name">잔여</div></div>
+      <div class="legend-val" style="color:var(--text3)">${100-t.rate}%</div>
+    </div>`;
+
+  const actions = {
+    1: ['투자지분 매각 대상 검토', '매각 협상 진행', '자금 회수 완료'],
+    9: ['CapEx 우선순위 재검토', '비효율 투자 항목 제거', '예산 절감 실행'],
+    11: ['콘텐츠 계약 재협상', '비효율 채널 정리', '비용 절감 모니터링'],
+    28: ['인력 효율화 계획 수립', 'HR 프로세스 최적화', '운영 비용 절감'],
+  };
+  const defaultActions = ['계획 수립 완료', '실행 중', '모니터링 진행'];
+  const acts = actions[t.no] || defaultActions;
+  document.getElementById('taskDetailActions').innerHTML = acts.map((a, i) => `
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);font-size:13px">
+      <div style="width:24px;height:24px;border-radius:8px;background:rgba(59,130,246,.15);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">${i+1}</div>
+      <span style="color:var(--text2)">${a}</span>
+      <span class="status-badge on-track" style="margin-left:auto">완료</span>
+    </div>`).join('');
+
+  // [04] Monthly mini bar chart
+  buildTaskMonthlyChart(t, col);
+
+  // [05] Monthly remarks
+  buildRemarksGrid(t.no);
+}
+
+function buildTaskMonthlyChart(t, col) {
+  const container = document.getElementById('taskMonthlyBar');
+  const monthlyTotal = document.getElementById('taskMonthlyTotal');
+  const positiveVals = t.monthly.filter(v => v > 0);
+  const total = t.monthly.reduce((s, v) => s + v, 0);
+  const maxVal = positiveVals.length > 0 ? Math.max(...positiveVals) : 1;
+  const months = ['1','2','3','4','5','6','7','8','9','10','11','12'];
+  if (monthlyTotal) monthlyTotal.textContent = `연간 합계 ${total.toFixed(1)}억`;
+  container.innerHTML = '';
+  months.forEach((m, i) => {
+    const v = t.monthly[i];
+    const h = v > 0 ? Math.max(4, v / maxVal * 100) : 2;
+    const col2 = v > 0 ? col : 'rgba(100,116,139,.2)';
+    const col_div = document.createElement('div');
+    col_div.className = 'mini-bar-col';
+    col_div.innerHTML = `
+      <div class="mini-bar-fill" style="height:0;background:${col2}" data-h="${h}px" title="${m}월: ${v}억"></div>
+      <div class="mini-bar-lbl">${m}</div>`;
+    container.appendChild(col_div);
+  });
+  setTimeout(() => {
+    container.querySelectorAll('.mini-bar-fill').forEach(b => { b.style.height = b.dataset.h; });
+  }, 100);
+}
+
+// ═══════════════════════════════ MONTHLY REMARKS ═══════════════════════════════
+const MONTH_LABELS = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+
+// In-memory store: { [taskNo]: [12 strings] }
+const remarksStore = {};
+let currentRemarksTaskNo = null;
+let remarksEditMode = false;
+
+function getRemarksKey(taskNo) {
+  if (!remarksStore[taskNo]) {
+    remarksStore[taskNo] = Array(12).fill('');
+  }
+  return remarksStore[taskNo];
+}
+
+function buildRemarksGrid(taskNo) {
+  currentRemarksTaskNo = taskNo;
+  remarksEditMode = false;
+  const btn = document.getElementById('remarksEditBtn');
+  const saveBtn = document.getElementById('remarksSaveBtn');
+  const status = document.getElementById('remarksEditStatus');
+  if (btn) { btn.style.display = ''; }
+  if (saveBtn) { saveBtn.style.display = 'none'; }
+  if (status) { status.textContent = '읽기 전용'; }
+
+  renderRemarksGrid(taskNo, false);
+}
+
+function renderRemarksGrid(taskNo, editMode) {
+  const grid = document.getElementById('remarksGrid');
+  if (!grid) return;
+  const remarks = getRemarksKey(taskNo);
+  grid.innerHTML = '';
+
+  MONTH_LABELS.forEach((label, i) => {
+    const hasRemark = remarks[i] && remarks[i].trim() !== '';
+    const cell = document.createElement('div');
+    cell.className = 'remarks-cell' + (editMode ? ' edit-active' : '');
+    cell.innerHTML = `
+      <div class="remarks-month-label">
+        <div class="month-dot${hasRemark ? ' has-remark' : ''}"></div>
+        ${label}
+      </div>
+      ${editMode
+        ? `<textarea class="remarks-textarea" data-month="${i}" placeholder="특이사항을 입력하세요..." rows="3">${remarks[i]}</textarea>`
+        : `<div class="remarks-text-view${!hasRemark ? ' empty' : ''}">${hasRemark ? escapeHtml(remarks[i]) : '내용 없음'}</div>`
+      }`;
+    grid.appendChild(cell);
+  });
+}
+
+function toggleRemarksEdit() {
+  remarksEditMode = true;
+  document.getElementById('remarksEditBtn').style.display = 'none';
+  document.getElementById('remarksSaveBtn').style.display = '';
+  document.getElementById('remarksEditStatus').textContent = '편집 중';
+  renderRemarksGrid(currentRemarksTaskNo, true);
+  // focus first textarea
+  const first = document.querySelector('.remarks-textarea');
+  if (first) first.focus();
+}
+
+function saveRemarks() {
+  if (currentRemarksTaskNo === null) return;
+  const textareas = document.querySelectorAll('.remarks-textarea');
+  const remarks = getRemarksKey(currentRemarksTaskNo);
+  textareas.forEach(ta => {
+    remarks[parseInt(ta.dataset.month)] = ta.value;
+  });
+
+  remarksEditMode = false;
+  document.getElementById('remarksEditBtn').style.display = '';
+  document.getElementById('remarksSaveBtn').style.display = 'none';
+  document.getElementById('remarksEditStatus').textContent = '저장됨 ✓';
+  setTimeout(() => {
+    const s = document.getElementById('remarksEditStatus');
+    if (s) s.textContent = '읽기 전용';
+  }, 2000);
+  renderRemarksGrid(currentRemarksTaskNo, false);
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+
+function showOi2Org(orgId, navEl) {
+  // 페이지 이동 (nav active 표시)
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-oi2').classList.add('active');
+  document.getElementById('breadcrumb-text').textContent = 'O/I 일상화 현황';
+  if (navEl) {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    navEl.classList.add('active');
+  }
+  // 해당 조직만 필터링해서 트리 & summary 렌더 (자동 선택 없음)
+  buildOi2Page(orgId);
+}
+
+// ═══════════════════════════════ TREE NAV ═══════════════════════════════
+function toggleTree(treeId) {
+  const tree = document.getElementById(treeId);
+  const arrId = treeId.replace('tree-', 'arr-');
+  const arr = document.getElementById(arrId);
+  const isOpen = tree.classList.contains('open');
+  tree.classList.toggle('open', !isOpen);
+  if (arr) arr.style.transform = isOpen ? '' : 'rotate(90deg)';
+  // 펼쳐질 때 하단 항목이 잘리지 않도록 스크롤
+  if (!isOpen) {
+    setTimeout(() => {
+      const nav = document.querySelector('.sidebar-nav');
+      if (nav) nav.scrollTop = nav.scrollHeight;
+    }, 350);
+  }
+}
+
+// ═══════════════════════════════ THEME TOGGLE ═══════════════════════════════
+let isDark = false;
+function toggleTheme() {
+  isDark = !isDark;
+  document.body.classList.toggle('light-mode', !isDark);
+  document.getElementById('themeIcon').textContent = isDark ? '☀️' : '🌙';
+  document.getElementById('themeLabel').textContent = isDark ? '라이트 모드' : '다크 모드';
+  const btn = document.getElementById('themeToggleBtn');
+  btn.style.background = isDark ? '' : '';
+}
+
+// ═══════════════════════════════ EDIT MODE ═══════════════════════════════
+let isEditMode = false;
+function toggleEditMode() {
+  isEditMode = !isEditMode;
+  document.body.classList.toggle('edit-mode', isEditMode);
+  const btn = document.getElementById('editToggleBtn');
+  const label = document.getElementById('editLabel');
+
+  if (isEditMode) {
+    btn.classList.add('active-edit');
+    label.textContent = '편집 종료';
+    // enable contenteditable on all data-editable elements
+    document.querySelectorAll('[data-editable]').forEach(el => {
+      el.contentEditable = 'true';
+      el.setAttribute('spellcheck', 'false');
+    });
+  } else {
+    btn.classList.remove('active-edit');
+    label.textContent = '편집 모드';
+    document.querySelectorAll('[data-editable]').forEach(el => {
+      el.contentEditable = 'false';
+      // blur to commit any in-progress edit
+      el.blur();
+    });
+  }
+}
+
+// Prevent edit-mode clicks from navigating (e.g. org-card / table rows)
+document.addEventListener('click', function(e) {
+  if (!isEditMode) return;
+  const editable = e.target.closest('[data-editable]');
+  if (editable) {
+    e.stopPropagation();
+  }
+}, true);
+
+window.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    drawDonut(document.getElementById('donutMain'), 100, '#10b981');
+  }, 100);
+  buildAnnualBar();
+  buildMonthlyBar();
+  buildCriticalBanner();
+  initFilters();
+  renderTaskTable(TASKS);
+  document.getElementById('filterCount').textContent = `${TASKS.length} / ${TASKS.length}개`;
+});
+</script>
+</body>
+</html>
