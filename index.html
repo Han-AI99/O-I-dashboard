@@ -1849,12 +1849,555 @@
     line-height: 1;
   }
   .modal-close:hover { color: var(--text); }
+
+  /* ── BOARD MODAL ── */
+  .board-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.65);
+    z-index: 600;
+    align-items: flex-start;
+    justify-content: center;
+    backdrop-filter: blur(6px);
+    padding: 40px 20px;
+    overflow-y: auto;
+  }
+  .board-modal-overlay.open { display: flex; }
+  .board-modal-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    width: 860px;
+    max-width: 100%;
+    animation: fadeIn .25s ease;
+    overflow: hidden;
+    margin: auto;
+  }
+  .board-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 22px 28px 18px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+  .board-modal-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .board-modal-title .board-icon {
+    width: 30px; height: 30px;
+    background: rgba(59,130,246,.15);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+  }
+  .board-header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .board-write-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 16px;
+    background: var(--accent);
+    border: none;
+    border-radius: 9px;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    font-family: var(--font);
+    cursor: pointer;
+    transition: opacity .15s;
+  }
+  .board-write-btn:hover { opacity: .85; }
+  .board-modal-close {
+    background: none;
+    border: none;
+    color: var(--text3);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0 4px;
+    line-height: 1;
+    transition: color .15s;
+  }
+  .board-modal-close:hover { color: var(--text); }
+
+  /* 게시판 필터 탭 */
+  .board-tabs {
+    display: flex;
+    gap: 6px;
+    padding: 14px 28px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .board-tab {
+    padding: 7px 16px;
+    border-radius: 8px 8px 0 0;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent;
+    border-bottom: none;
+    color: var(--text3);
+    background: none;
+    font-family: var(--font);
+    transition: all .15s;
+    margin-bottom: -1px;
+  }
+  .board-tab:hover { color: var(--text2); }
+  .board-tab.active {
+    background: var(--surface);
+    border-color: var(--border);
+    border-bottom-color: var(--surface);
+    color: var(--accent);
+  }
+
+  /* 게시판 검색 */
+  .board-search-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 28px;
+    border-bottom: 1px solid var(--border);
+  }
+  .board-search-input {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 8px 14px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: var(--font);
+    outline: none;
+    transition: border-color .2s;
+  }
+  .board-search-input:focus { border-color: rgba(59,130,246,.4); }
+  .board-search-input::placeholder { color: var(--text3); }
+
+  /* 게시물 목록 */
+  .board-list { padding: 0; }
+  .board-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 28px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .board-item:last-child { border-bottom: none; }
+  .board-item:hover { background: var(--surface2); }
+  .board-item-cat {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 5px;
+    flex-shrink: 0;
+    letter-spacing: .04em;
+  }
+  .board-item-title {
+    flex: 1;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .board-item-title .board-new {
+    display: inline-block;
+    background: var(--accent);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 4px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+  .board-item-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+    font-size: 11.5px;
+    color: var(--text3);
+  }
+  .board-item-author {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .board-item-avatar {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: rgba(59,130,246,.2);
+    color: var(--accent);
+    font-size: 8px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .board-empty {
+    text-align: center;
+    padding: 52px 0;
+    color: var(--text3);
+    font-size: 13px;
+  }
+  .board-empty .empty-icon { font-size: 36px; margin-bottom: 12px; }
+
+  /* 글쓰기 폼 */
+  .board-write-form {
+    display: none;
+    padding: 24px 28px;
+    border-top: 1px solid var(--border);
+    background: var(--surface2);
+    flex-direction: column;
+    gap: 12px;
+  }
+  .board-write-form.open { display: flex; }
+  .board-form-row {
+    display: flex;
+    gap: 10px;
+  }
+  .board-form-select {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 9px 12px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: var(--font);
+    outline: none;
+    cursor: pointer;
+    min-width: 110px;
+  }
+  .board-form-input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 9px 14px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: var(--font);
+    outline: none;
+    transition: border-color .2s;
+  }
+  .board-form-input:focus { border-color: rgba(59,130,246,.4); }
+  .board-form-input::placeholder { color: var(--text3); }
+  .board-form-textarea {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 11px 14px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: var(--font);
+    outline: none;
+    resize: vertical;
+    min-height: 100px;
+    line-height: 1.6;
+    transition: border-color .2s;
+  }
+  .board-form-textarea:focus { border-color: rgba(59,130,246,.4); }
+  .board-form-textarea::placeholder { color: var(--text3); }
+  .board-form-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+  .board-form-cancel {
+    padding: 8px 18px;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text2);
+    font-size: 12px;
+    font-weight: 600;
+    font-family: var(--font);
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .board-form-cancel:hover { background: var(--surface3); }
+  .board-form-submit {
+    padding: 8px 20px;
+    background: var(--accent);
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    font-family: var(--font);
+    cursor: pointer;
+    transition: opacity .15s;
+  }
+  .board-form-submit:hover { opacity: .85; }
+
+  /* 게시물 상세 뷰 */
+  .board-detail-view {
+    display: none;
+    flex-direction: column;
+  }
+  .board-detail-view.open { display: flex; }
+  .board-detail-header {
+    padding: 20px 28px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .board-detail-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: var(--text3);
+    cursor: pointer;
+    margin-bottom: 12px;
+    transition: color .15s;
+    background: none;
+    border: none;
+    font-family: var(--font);
+    padding: 0;
+  }
+  .board-detail-back:hover { color: var(--accent); }
+  .board-detail-cat { margin-bottom: 8px; }
+  .board-detail-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.4;
+    margin-bottom: 10px;
+  }
+  .board-detail-meta {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 12px;
+    color: var(--text3);
+  }
+  .board-detail-body {
+    padding: 24px 28px;
+    font-size: 14px;
+    color: var(--text2);
+    line-height: 1.8;
+    white-space: pre-wrap;
+    min-height: 120px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* 댓글 */
+  .board-comments {
+    padding: 18px 28px 24px;
+  }
+  .board-comments-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text3);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  .board-comment-item {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .board-comment-avatar {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: rgba(59,130,246,.18);
+    color: var(--accent);
+    font-size: 10px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .board-comment-bubble {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 0 10px 10px 10px;
+    padding: 10px 14px;
+  }
+  .board-comment-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 5px;
+  }
+  .board-comment-author {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .board-comment-date {
+    font-size: 11px;
+    color: var(--text3);
+  }
+  .board-comment-text {
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.6;
+  }
+  .board-comment-input-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .board-comment-input {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 9px 14px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: var(--font);
+    outline: none;
+    transition: border-color .2s;
+  }
+  .board-comment-input:focus { border-color: rgba(59,130,246,.4); }
+  .board-comment-input::placeholder { color: var(--text3); }
+  .board-comment-send {
+    padding: 8px 16px;
+    background: var(--accent);
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    font-family: var(--font);
+    cursor: pointer;
+    transition: opacity .15s;
+    white-space: nowrap;
+  }
+  .board-comment-send:hover { opacity: .85; }
+
+  /* 게시판 핫키 버튼 */
+  .board-hotkey-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 13px;
+    border-radius: 9px;
+    border: 1px solid rgba(59,130,246,.35);
+    background: rgba(59,130,246,.1);
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 700;
+    font-family: var(--font);
+    cursor: pointer;
+    transition: all .18s;
+    white-space: nowrap;
+  }
+  .board-hotkey-btn:hover {
+    background: rgba(59,130,246,.2);
+    border-color: rgba(59,130,246,.55);
+  }
+  .board-hotkey-btn .btn-icon { font-size: 14px; line-height: 1; }
+  .board-count-badge {
+    background: var(--accent);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 99px;
+    min-width: 16px;
+    text-align: center;
+  }
 </style>
 </head>
 <body class="light-mode">
 
 <!-- ════════════════════════════════════════ EDIT MODE BANNER ════════════════════════════════════════ -->
 <div class="edit-mode-banner">✏️ 편집 모드 ON — 텍스트·숫자를 클릭해서 직접 수정하세요</div>
+
+<!-- ════════════════════════════════════════ BOARD MODAL ════════════════════════════════════════ -->
+<div class="board-modal-overlay" id="boardModal" onclick="onBoardOverlayClick(event)">
+  <div class="board-modal-box">
+    <!-- 헤더 -->
+    <div class="board-modal-header">
+      <div class="board-modal-title">
+        <div class="board-icon">📋</div>
+        O/I 팀 게시판
+      </div>
+      <div class="board-header-right">
+        <button class="board-write-btn" onclick="toggleBoardWrite()">
+          <span>✏️</span> 글쓰기
+        </button>
+        <button class="board-modal-close" onclick="closeBoard()">✕</button>
+      </div>
+    </div>
+
+    <!-- 카테고리 탭 -->
+    <div class="board-tabs" id="boardTabs">
+      <button class="board-tab active" onclick="setBoardTab('전체', this)">전체</button>
+      <button class="board-tab" onclick="setBoardTab('공지', this)">📢 공지</button>
+      <button class="board-tab" onclick="setBoardTab('보고', this)">📊 보고</button>
+      <button class="board-tab" onclick="setBoardTab('질문', this)">❓ 질문</button>
+      <button class="board-tab" onclick="setBoardTab('자유', this)">💬 자유</button>
+    </div>
+
+    <!-- 검색 -->
+    <div class="board-search-bar">
+      <input class="board-search-input" id="boardSearchInput" placeholder="제목 또는 내용 검색..." oninput="renderBoardList()">
+    </div>
+
+    <!-- 목록 뷰 -->
+    <div id="boardListView">
+      <div class="board-list" id="boardList"></div>
+    </div>
+
+    <!-- 상세 뷰 -->
+    <div class="board-detail-view" id="boardDetailView">
+      <div class="board-detail-header">
+        <button class="board-detail-back" onclick="backToBoardList()">← 목록으로</button>
+        <div class="board-detail-cat" id="boardDetailCat"></div>
+        <div class="board-detail-title" id="boardDetailTitle"></div>
+        <div class="board-detail-meta" id="boardDetailMeta"></div>
+      </div>
+      <div class="board-detail-body" id="boardDetailBody"></div>
+      <div class="board-comments">
+        <div class="board-comments-title" id="boardCommentsTitle">댓글 0개</div>
+        <div id="boardCommentList"></div>
+        <div class="board-comment-input-row">
+          <input class="board-comment-input" id="boardCommentInput" placeholder="댓글을 입력하세요...">
+          <button class="board-comment-send" onclick="submitComment()">등록</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 글쓰기 폼 -->
+    <div class="board-write-form" id="boardWriteForm">
+      <div class="board-form-row">
+        <select class="board-form-select" id="boardFormCat">
+          <option value="공지">📢 공지</option>
+          <option value="보고">📊 보고</option>
+          <option value="질문" selected>❓ 질문</option>
+          <option value="자유">💬 자유</option>
+        </select>
+        <input class="board-form-input" id="boardFormTitle" placeholder="제목을 입력하세요">
+      </div>
+      <textarea class="board-form-textarea" id="boardFormBody" placeholder="내용을 입력하세요..."></textarea>
+      <div class="board-form-actions">
+        <button class="board-form-cancel" onclick="toggleBoardWrite()">취소</button>
+        <button class="board-form-submit" onclick="submitBoardPost()">등록하기</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- ════════════════════════════════════════ SIDEBAR ════════════════════════════════════════ -->
 <aside class="sidebar">
@@ -1970,8 +2513,12 @@
       <span class="current" id="breadcrumb-text">전사 대시보드</span>
     </div>
     <div class="topbar-right">
-      <span class="period-tag" data-editable contenteditable="false">24'–26' 3개년 계획</span>
-      <span class="as-of" data-editable contenteditable="false">As of Dec. 2025</span>
+      <span class="as-of" id="asOfDate"></span>
+      <button class="board-hotkey-btn" onclick="openBoard()" title="게시판 열기 (단축키: B)">
+        <span class="btn-icon">📋</span>
+        <span>게시판</span>
+        <span class="board-count-badge" id="boardCountBadge">0</span>
+      </button>
       <button class="topbar-icon-btn" id="themeToggleBtn" onclick="toggleTheme()" title="라이트/다크 모드 전환">
         <span class="btn-icon" id="themeIcon">🌙</span>
         <span id="themeLabel">다크 모드</span>
@@ -4261,6 +4808,227 @@ document.addEventListener('click', function(e) {
   }
 }, true);
 
+// ═══════════════════════════════ BOARD (게시판) ═══════════════════════════════
+
+const CAT_STYLE = {
+  '공지': { bg: 'rgba(239,68,68,.12)',    color: '#ef4444' },
+  '보고': { bg: 'rgba(59,130,246,.12)',   color: '#3b82f6' },
+  '질문': { bg: 'rgba(245,158,11,.12)',   color: '#f59e0b' },
+  '자유': { bg: 'rgba(16,185,129,.12)',   color: '#10b981' },
+};
+const CAT_ICON = { '공지':'📢', '보고':'📊', '질문':'❓', '자유':'💬' };
+
+// 기본 게시물 (샘플)
+let boardPosts = [
+  {
+    id: 1,
+    cat: '공지',
+    title: 'O/I Progress Dashboard v1.0 오픈 안내',
+    body: '안녕하세요.\nO/I Progress Dashboard가 정식 오픈되었습니다.\n\n주요 기능:\n• 전사 O/I 과제 진도율 실시간 조회\n• 조직별 / 과제별 현황 확인\n• O/I 일상화 과제 관리\n\n문의사항은 게시판을 통해 남겨주시기 바랍니다.',
+    author: '관리자',
+    date: '2026.04.07',
+    views: 42,
+    comments: [],
+    isNew: true,
+  },
+  {
+    id: 2,
+    cat: '보고',
+    title: "'26년 1분기 O/I 진도율 보고 (19.3%)",
+    body: "'26년 1분기 기준 전사 O/I 진도율은 19.3%로 집계되었습니다.\n\n• 누적 실적: 123억\n• 연간 계획: 637억\n• Critical 과제: 2건 별도 관리 필요\n\n상세 내용은 과제별 현황 탭을 참조해주세요.",
+    author: '경영전략팀',
+    date: '2026.04.05',
+    views: 28,
+    comments: [
+      { author: '유선사업본부', text: '확인했습니다. 2분기 만회 계획 수립 중입니다.', date: '2026.04.06' }
+    ],
+    isNew: false,
+  },
+  {
+    id: 3,
+    cat: '질문',
+    title: '과제 달성률 계산 기준 문의드립니다',
+    body: '달성률 계산 시 분모가 연간 계획인지, 3개년 누적 계획인지 확인 부탁드립니다.\n\n현재 화면에 표시되는 %가 어떤 기준인지 헷갈려서요.',
+    author: '미디어사업본부',
+    date: '2026.04.04',
+    views: 15,
+    comments: [],
+    isNew: false,
+  },
+];
+let boardNextId = 4;
+let currentBoardTab = '전체';
+let currentPostId = null;
+
+function openBoard() {
+  document.getElementById('boardModal').classList.add('open');
+  backToBoardList();
+  renderBoardList();
+}
+
+function closeBoard() {
+  document.getElementById('boardModal').classList.remove('open');
+}
+
+function onBoardOverlayClick(e) {
+  if (e.target === document.getElementById('boardModal')) closeBoard();
+}
+
+function setBoardTab(tab, el) {
+  currentBoardTab = tab;
+  document.querySelectorAll('.board-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('boardSearchInput').value = '';
+  renderBoardList();
+}
+
+function getFilteredPosts() {
+  const q = (document.getElementById('boardSearchInput')?.value || '').toLowerCase();
+  return boardPosts.filter(p => {
+    if (currentBoardTab !== '전체' && p.cat !== currentBoardTab) return false;
+    if (q && !p.title.toLowerCase().includes(q) && !p.body.toLowerCase().includes(q)) return false;
+    return true;
+  }).sort((a, b) => b.id - a.id);
+}
+
+function renderBoardList() {
+  const posts = getFilteredPosts();
+  const list = document.getElementById('boardList');
+  if (posts.length === 0) {
+    list.innerHTML = `<div class="board-empty"><div class="empty-icon">📭</div>게시물이 없습니다</div>`;
+  } else {
+    list.innerHTML = posts.map(p => {
+      const cs = CAT_STYLE[p.cat] || {};
+      const initials = p.author.slice(0,2);
+      return `
+      <div class="board-item" onclick="openPost(${p.id})">
+        <span class="board-item-cat" style="background:${cs.bg};color:${cs.color}">
+          ${CAT_ICON[p.cat]} ${p.cat}
+        </span>
+        <div class="board-item-title">
+          ${p.title}${p.isNew ? '<span class="board-new">NEW</span>' : ''}
+        </div>
+        <div class="board-item-meta">
+          <div class="board-item-author">
+            <div class="board-item-avatar">${initials}</div>
+            <span>${p.author}</span>
+          </div>
+          <span>${p.date}</span>
+          <span>👁 ${p.views}</span>
+          ${p.comments.length > 0 ? `<span>💬 ${p.comments.length}</span>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+  }
+  updateBoardBadge();
+}
+
+function updateBoardBadge() {
+  const newCount = boardPosts.filter(p => p.isNew).length;
+  const badge = document.getElementById('boardCountBadge');
+  badge.textContent = boardPosts.length;
+  badge.style.background = newCount > 0 ? '#ef4444' : 'var(--accent)';
+}
+
+function openPost(id) {
+  const post = boardPosts.find(p => p.id === id);
+  if (!post) return;
+  post.views++;
+  post.isNew = false;
+  currentPostId = id;
+
+  const cs = CAT_STYLE[post.cat] || {};
+  document.getElementById('boardDetailCat').innerHTML =
+    `<span class="board-item-cat" style="background:${cs.bg};color:${cs.color}">${CAT_ICON[post.cat]} ${post.cat}</span>`;
+  document.getElementById('boardDetailTitle').textContent = post.title;
+  document.getElementById('boardDetailMeta').innerHTML =
+    `<span>✍️ ${post.author}</span><span>📅 ${post.date}</span><span>👁 ${post.views}</span>`;
+  document.getElementById('boardDetailBody').textContent = post.body;
+
+  renderComments(post);
+
+  document.getElementById('boardListView').style.display = 'none';
+  document.getElementById('boardWriteForm').classList.remove('open');
+  document.getElementById('boardDetailView').classList.add('open');
+  updateBoardBadge();
+}
+
+function renderComments(post) {
+  const list = document.getElementById('boardCommentList');
+  document.getElementById('boardCommentsTitle').textContent = `댓글 ${post.comments.length}개`;
+  if (post.comments.length === 0) {
+    list.innerHTML = `<div style="font-size:12px;color:var(--text3);padding:8px 0 12px">아직 댓글이 없습니다. 첫 댓글을 남겨보세요!</div>`;
+    return;
+  }
+  list.innerHTML = post.comments.map(c => `
+    <div class="board-comment-item">
+      <div class="board-comment-avatar">${c.author.slice(0,2)}</div>
+      <div class="board-comment-bubble">
+        <div class="board-comment-meta">
+          <span class="board-comment-author">${c.author}</span>
+          <span class="board-comment-date">${c.date}</span>
+        </div>
+        <div class="board-comment-text">${c.text}</div>
+      </div>
+    </div>`).join('');
+}
+
+function submitComment() {
+  const input = document.getElementById('boardCommentInput');
+  const text = input.value.trim();
+  if (!text || currentPostId === null) return;
+  const post = boardPosts.find(p => p.id === currentPostId);
+  if (!post) return;
+  const now = new Date();
+  const date = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
+  post.comments.push({ author: '나', text, date });
+  input.value = '';
+  renderComments(post);
+}
+
+function backToBoardList() {
+  currentPostId = null;
+  document.getElementById('boardListView').style.display = '';
+  document.getElementById('boardDetailView').classList.remove('open');
+  document.getElementById('boardWriteForm').classList.remove('open');
+  renderBoardList();
+}
+
+function toggleBoardWrite() {
+  const form = document.getElementById('boardWriteForm');
+  const isOpen = form.classList.contains('open');
+  if (!isOpen) {
+    document.getElementById('boardDetailView').classList.remove('open');
+    document.getElementById('boardListView').style.display = '';
+    document.getElementById('boardFormTitle').value = '';
+    document.getElementById('boardFormBody').value = '';
+    document.getElementById('boardFormCat').value = '질문';
+  }
+  form.classList.toggle('open', !isOpen);
+}
+
+function submitBoardPost() {
+  const title = document.getElementById('boardFormTitle').value.trim();
+  const body  = document.getElementById('boardFormBody').value.trim();
+  const cat   = document.getElementById('boardFormCat').value;
+  if (!title) { document.getElementById('boardFormTitle').focus(); return; }
+  if (!body)  { document.getElementById('boardFormBody').focus();  return; }
+  const now = new Date();
+  const date = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
+  boardPosts.push({ id: boardNextId++, cat, title, body, author: '나', date, views: 0, comments: [], isNew: true });
+  document.getElementById('boardWriteForm').classList.remove('open');
+  currentBoardTab = '전체';
+  document.querySelectorAll('.board-tab').forEach((t,i) => t.classList.toggle('active', i===0));
+  renderBoardList();
+}
+
+// 단축키 B → 게시판 열기
+document.addEventListener('keydown', function(e) {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+  if (e.key === 'b' || e.key === 'B') openBoard();
+  if (e.key === 'Escape') closeBoard();
+});
+
 window.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => {
     drawDonut(document.getElementById('donutMain'), 100, '#10b981');
@@ -4271,6 +5039,19 @@ window.addEventListener('DOMContentLoaded', () => {
   initFilters();
   renderTaskTable(TASKS);
   document.getElementById('filterCount').textContent = `${TASKS.length} / ${TASKS.length}개`;
+  updateBoardBadge();
+
+  // As of 날짜 자동 업데이트
+  function updateAsOfDate() {
+    const now = new Date();
+    const months = ['Jan.','Feb.','Mar.','Apr.','May','Jun.','Jul.','Aug.','Sep.','Oct.','Nov.','Dec.'];
+    const el = document.getElementById('asOfDate');
+    if (el) el.textContent = `As of ${months[now.getMonth()]} ${now.getFullYear()}`;
+  }
+  updateAsOfDate();
+  const _now = new Date();
+  const _msUntilMidnight = new Date(_now.getFullYear(), _now.getMonth(), _now.getDate()+1) - _now;
+  setTimeout(function _dateTick() { updateAsOfDate(); setTimeout(_dateTick, 86400000); }, _msUntilMidnight);
 });
 </script>
 </body>
